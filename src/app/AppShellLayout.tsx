@@ -9,14 +9,18 @@ import {
   Text,
   Title,
   Tooltip,
+  useComputedColorScheme,
+  useMantineColorScheme,
 } from '@mantine/core'
 import { useDisclosure, useLocalStorage } from '@mantine/hooks'
 import {
   LayoutDashboard,
   Library,
+  Moon,
   PanelLeftClose,
   PanelLeftOpen,
   ShieldCheck,
+  Sun,
 } from 'lucide-react'
 import { NavLink as RouterNavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '@/core/auth/AuthContext'
@@ -33,6 +37,10 @@ export function AppShellLayout() {
   const [desktopCollapsed, setDesktopCollapsed] = useLocalStorage({
     key: 'reactbase.navbar.desktop-collapsed',
     defaultValue: false,
+    getInitialValueInEffect: true,
+  })
+  const { setColorScheme } = useMantineColorScheme()
+  const computedColorScheme = useComputedColorScheme('light', {
     getInitialValueInEffect: true,
   })
   const auth = useAuth()
@@ -70,6 +78,28 @@ export function AppShellLayout() {
             <Title order={4}>ReactBase</Title>
           </Group>
           <Group>
+            <Tooltip
+              label={
+                computedColorScheme === 'dark'
+                  ? 'Switch to light mode'
+                  : 'Switch to dark mode'
+              }
+              withArrow
+            >
+              <ActionIcon
+                variant="subtle"
+                aria-label={
+                  computedColorScheme === 'dark'
+                    ? 'Switch to light mode'
+                    : 'Switch to dark mode'
+                }
+                onClick={() =>
+                  setColorScheme(computedColorScheme === 'dark' ? 'light' : 'dark')
+                }
+              >
+                {computedColorScheme === 'dark' ? <Moon size={18} /> : <Sun size={18} />}
+              </ActionIcon>
+            </Tooltip>
             {auth.user && (
               <Text size="sm" c="dimmed">
                 {auth.user.name} ({ROLE_LABEL[auth.user.role]})
