@@ -11,6 +11,9 @@ export const router = createBrowserRouter([
   {
     path: '/login',
     element: <LoginPage />,
+    handle: {
+      title: 'Sign in',
+    },
   },
   {
     path: '/',
@@ -23,10 +26,18 @@ export const router = createBrowserRouter([
       {
         index: true,
         element: <DashboardPage />,
+        handle: {
+          breadcrumb: 'Dashboard',
+          title: 'Dashboard',
+        },
       },
       {
         path: 'components',
         element: <ComponentsPage />,
+        handle: {
+          breadcrumb: 'Components',
+          title: 'Components',
+        },
       },
       {
         path: 'admin',
@@ -35,11 +46,18 @@ export const router = createBrowserRouter([
             <AdminPage />
           </ProtectedRoute>
         ),
+        handle: {
+          breadcrumb: 'Admin',
+          title: 'Admin',
+        },
       },
     ],
   },
   {
     path: '*',
     element: <NotFoundPage />,
+    handle: {
+      title: 'Not found',
+    },
   },
 ])

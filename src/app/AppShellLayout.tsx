@@ -1,6 +1,8 @@
 import {
   ActionIcon,
+  Anchor,
   AppShell,
+  Breadcrumbs,
   Burger,
   Button,
   ColorSwatch,
@@ -14,7 +16,7 @@ import {
   useComputedColorScheme,
   useMantineColorScheme,
 } from '@mantine/core'
-import { useDisclosure, useLocalStorage } from '@mantine/hooks'
+import { useDocumentTitle, useDisclosure, useLocalStorage } from '@mantine/hooks'
 import {
   Check,
   LayoutDashboard,
@@ -26,7 +28,12 @@ import {
   ShieldCheck,
   Sun,
 } from 'lucide-react'
-import { NavLink as RouterNavLink, Outlet } from 'react-router-dom'
+import {
+  Link as RouterLink,
+  NavLink as RouterNavLink,
+  Outlet,
+  useMatches,
+} from 'react-router-dom'
 import { useAuth } from '@/core/auth/AuthContext'
 import { ROLE_LABEL } from '@/core/auth/roles'
 import { usePrimaryColorSettings } from '@/core/theme/PrimaryColorContext'
@@ -51,6 +58,23 @@ export function AppShellLayout() {
   })
   const { primaryColor, setPrimaryColor } = usePrimaryColorSettings()
   const auth = useAuth()
+  const matches = useMatches()
+  const breadcrumbItems = matches
+    .map((match) => {
+      const handle = match.handle as { breadcrumb?: string } | undefined
+      if (!handle?.breadcrumb) {
+        return null
+      }
+      return {
+        label: handle.breadcrumb,
+        path: match.pathname,
+      }
+    })
+    .filter((item): item is { label: string; path: string } => item !== null)
+  const currentPageTitle =
+    (matches.at(-1)?.handle as { title?: string } | undefined)?.title ?? 'Dashboard'
+
+  useDocumentTitle(`${currentPageTitle} | ReactBase`)
 
   return (
     <AppShell
@@ -83,6 +107,9 @@ export function AppShellLayout() {
               )}
             </ActionIcon>
             <Title order={4}>ReactBase</Title>
+            <Text size="sm" c="dimmed" visibleFrom="sm">
+              {currentPageTitle}
+            </Text>
           </Group>
           <Group>
             <Tooltip
@@ -173,6 +200,21 @@ export function AppShellLayout() {
         </Stack>
       </AppShell.Navbar>
       <AppShell.Main>
+        {breadcrumbItems.length > 0 && (
+          <Breadcrumbs mb="sm">
+            {breadcrumbItems.map((item, index) =>
+              index === breadcrumbItems.length - 1 ? (
+                <Text key={item.path} size="sm" c="dimmed">
+                  {item.label}
+                </Text>
+              ) : (
+                <Anchor key={item.path} component={RouterLink} to={item.path} size="sm">
+                  {item.label}
+                </Anchor>
+              ),
+            )}
+          </Breadcrumbs>
+        )}
         <Outlet />
       </AppShell.Main>
     </AppShell>
