@@ -29,6 +29,11 @@ export const router = createBrowserRouter([
         handle: {
           breadcrumb: 'Dashboard',
           title: 'Dashboard',
+          quickSearchPlaceholder: 'Search dashboard insights',
+          actions: [
+            { label: 'New report', variant: 'light' },
+            { label: 'Export', variant: 'default' },
+          ],
         },
       },
       {
@@ -37,6 +42,11 @@ export const router = createBrowserRouter([
         handle: {
           breadcrumb: 'Components',
           title: 'Components',
+          quickSearchPlaceholder: 'Search components',
+          actions: [
+            { label: 'Add component', variant: 'light' },
+            { label: 'Open docs', variant: 'default' },
+          ],
         },
       },
       {
@@ -49,6 +59,11 @@ export const router = createBrowserRouter([
         handle: {
           breadcrumb: 'Admin',
           title: 'Admin',
+          quickSearchPlaceholder: 'Search admin settings',
+          actions: [
+            { label: 'Invite user', variant: 'light' },
+            { label: 'Audit logs', variant: 'default' },
+          ],
         },
       },
     ],

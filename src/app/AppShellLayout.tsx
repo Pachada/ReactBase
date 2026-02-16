@@ -11,12 +11,14 @@ import {
   NavLink,
   Stack,
   Text,
+  TextInput,
   Title,
   Tooltip,
   useComputedColorScheme,
   useMantineColorScheme,
 } from '@mantine/core'
 import { useDocumentTitle, useDisclosure, useLocalStorage } from '@mantine/hooks'
+import { notifications } from '@mantine/notifications'
 import {
   Check,
   LayoutDashboard,
@@ -25,6 +27,7 @@ import {
   Palette,
   PanelLeftClose,
   PanelLeftOpen,
+  Search,
   ShieldCheck,
   Sun,
 } from 'lucide-react'
@@ -46,6 +49,16 @@ const links = [
   { to: '/admin', label: 'Admin', icon: ShieldCheck },
 ]
 
+type AppRouteHandle = {
+  breadcrumb?: string
+  title?: string
+  quickSearchPlaceholder?: string
+  actions?: Array<{
+    label: string
+    variant?: 'filled' | 'light' | 'default' | 'subtle'
+  }>
+}
+
 export function AppShellLayout() {
   const [opened, { toggle }] = useDisclosure()
   const [desktopCollapsed, setDesktopCollapsed] = useLocalStorage({
@@ -61,9 +74,10 @@ export function AppShellLayout() {
   const auth = useAuth()
   const location = useLocation()
   const matches = useMatches()
+  const currentHandle = matches.at(-1)?.handle as AppRouteHandle | undefined
   const breadcrumbItems = matches
     .map((match) => {
-      const handle = match.handle as { breadcrumb?: string } | undefined
+      const handle = match.handle as AppRouteHandle | undefined
       if (!handle?.breadcrumb) {
         return null
       }
@@ -73,8 +87,10 @@ export function AppShellLayout() {
       }
     })
     .filter((item): item is { label: string; path: string } => item !== null)
-  const currentPageTitle =
-    (matches.at(-1)?.handle as { title?: string } | undefined)?.title ?? 'Dashboard'
+  const currentPageTitle = currentHandle?.title ?? 'Dashboard'
+  const commandPlaceholder =
+    currentHandle?.quickSearchPlaceholder ?? `Search ${currentPageTitle.toLowerCase()}`
+  const commandActions = currentHandle?.actions ?? []
   const isActiveLink = (to: string) =>
     to === '/' ? location.pathname === '/' : location.pathname.startsWith(to)
 
@@ -114,6 +130,31 @@ export function AppShellLayout() {
             <Text size="sm" c="dimmed" visibleFrom="sm">
               {currentPageTitle}
             </Text>
+          </Group>
+          <Group flex={1} mx="md" visibleFrom="md" wrap="nowrap">
+            <TextInput
+              aria-label="Quick search"
+              placeholder={commandPlaceholder}
+              leftSection={<Search size={14} />}
+              style={{ flex: 1, maxWidth: 420 }}
+            />
+            <Group gap="xs" wrap="nowrap">
+              {commandActions.slice(0, 2).map((action) => (
+                <Button
+                  key={action.label}
+                  size="xs"
+                  variant={action.variant ?? 'default'}
+                  onClick={() =>
+                    notifications.show({
+                      title: action.label,
+                      message: 'Command action slot placeholder.',
+                    })
+                  }
+                >
+                  {action.label}
+                </Button>
+              ))}
+            </Group>
           </Group>
           <Group>
             <Tooltip
