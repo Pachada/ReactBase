@@ -4,25 +4,35 @@ This document tracks potential enhancements for the ReactBase skeleton app, orga
 
 ---
 
+## ✅ Recently Completed
+
+### UI/UX Enhancements
+
+- [x] **Animated page transitions** — Route-level transition animations using `framer-motion` for smooth page-to-page navigation
+- [x] **Skeleton loading states** — Shimmer skeleton placeholders for dashboard cards, tables, and charts
+- [x] **Toast positioning preference** — User-selectable notification toast position (top-right, bottom-right, bottom-center)
+- [x] **Mobile bottom navigation** — Bottom tab bar for thumb-zone optimized mobile access
+- [x] **Empty state illustrations** — Custom SVG illustrations for no-data, no-results, and no-notifications states
+- [x] **Micro-interaction feedback** — Haptic-style visual feedback (ripple, hover lift, press scale)
+- [x] **Scroll-to-top button** — Floating scroll button that appears after scrolling threshold
+
+### Theme & Branding
+
+- [x] **Dark mode login hero** — Login hero panel dynamically adjusts colors based on light/dark theme
+- [x] **Font picker with preview** — Interactive dropdown with 13 curated Google Fonts and live preview panel
+
+---
+
 ## UI/UX Enhancements
 
-- [ ] **Animated page transitions** — Add route-level transition animations using `framer-motion` or `@formkit/auto-animate` for smooth page-to-page navigation instead of CSS-only `page-enter`.
-- [ ] **Skeleton loading states** — Add shimmer skeleton placeholders for every data-fetching section (dashboard cards, table, chart) to improve perceived performance.
-- [ ] **Breadcrumb dropdown navigation** — Make breadcrumb segments interactive with dropdown menus to jump between sibling routes.
-- [ ] **Toast positioning preference** — Let users choose notification toast position (top-right, bottom-right, bottom-center) via the theme token editor.
-- [ ] **Mobile bottom navigation** — Replace the sidebar hamburger menu on mobile with a bottom tab bar for faster thumb-zone access.
-- [ ] **Empty state illustrations** — Add contextual SVG illustrations for empty states (no data, no results, no notifications) instead of plain text..
-- [ ] **Micro-interaction feedback** — Add haptic-style visual feedback on button clicks (ripple or scale-down effect) for a more tactile feel.
-- [ ] **Scroll-to-top button** — Add a floating scroll-to-top button on long pages that appears after scrolling past a threshold
+- [ ] **Breadcrumb dropdown navigation** — Make breadcrumb segments interactive with dropdown menus to jump between sibling routes
 
 ## Theme & Branding
 
-- [ ] **Dark mode login hero** — Dynamically adjust the login hero panel colors based on current color scheme (light/dark).
-- [ ] **Custom color scale generator** — Add a UI in the theme editor to generate a full 10-shade color scale from any single hex color input.
-- [ ] **Font picker with preview** — Replace the font family text input with a dropdown of curated Google Fonts options with live preview.
-- [ ] **Logo upload slot** — Add a brand logo upload/URL field in the theme token editor that replaces the text-only brand name in the header.
-- [ ] **CSS variable export** — Add a "Copy theme as CSS variables" button in the theme editor for easy integration into external systems.
-- [ ] **Compact mode toggle** — Add a global density toggle (comfortable/compact) that adjusts padding, font sizes, and spacing app-wide.
+- [ ] **Custom color scale generator** — Add a UI in the theme editor to generate a full 10-shade color scale from any single hex color input
+- [ ] **Logo upload slot** — Add a brand logo upload/URL field in the theme token editor that replaces the text-only brand name in the header
+- [ ] **CSS variable export** — Add a "Copy theme as CSS variables" button in the theme editor for easy integration into external systems
+- [ ] **Compact mode toggle** — Add a global density toggle (comfortable/compact) that adjusts padding, font sizes, and spacing app-wide
 
 ## Authentication & Authorization
 

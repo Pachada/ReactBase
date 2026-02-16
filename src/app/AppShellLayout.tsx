@@ -55,6 +55,7 @@ import { useNotificationCenter } from '@/core/notifications/NotificationCenterCo
 import { usePrimaryColorSettings } from '@/core/theme/PrimaryColorContext'
 import { PRIMARY_COLOR_PRESETS } from '@/core/theme/color-presets'
 import { useThemeTokens } from '@/core/theme/ThemeTokensContext'
+import { FontPicker } from '@/core/ui/FontPicker'
 import { ScrollToTop } from '@/core/ui/ScrollToTop'
 
 type AppRouteHandle = {
@@ -566,10 +567,9 @@ export function AppShellLayout() {
               { value: 'xl', label: 'Extra large' },
             ]}
           />
-          <TextInput
-            label="Font family"
+          <FontPicker
             value={tokens.fontFamily}
-            onChange={(event) => updateTokens({ fontFamily: event.currentTarget.value })}
+            onChange={(value) => updateTokens({ fontFamily: value })}
           />
           <Select
             label="Notification position"

@@ -168,6 +168,7 @@ Persistence key (user-scoped):
 Files:
 
 - `src/core/theme/ThemeTokensContext.tsx`
+- `src/core/ui/FontPicker.tsx`
 - `src/app/providers/AppProviders.tsx`
 - `src/app/AppShellLayout.tsx` (Drawer UI)
 
@@ -175,7 +176,7 @@ Editable tokens today:
 
 - `brandName`
 - `radius` (`sm | md | lg | xl`)
-- `fontFamily` (default: `Outfit, system-ui, sans-serif`)
+- `fontFamily` (default: `Outfit, system-ui, sans-serif`) — Interactive picker with 13 curated Google Fonts and live preview
 - `notificationPosition` (`top-right | bottom-right | bottom-center`)
 
 Effects:
@@ -183,6 +184,7 @@ Effects:
 - Header app name uses `brandName`
 - Mantine theme uses tokenized `defaultRadius` and `fontFamily`
 - Document title uses `brandName`
+- Font picker dynamically loads Google Fonts and shows live preview of selected font
 
 Persistence key (user-scoped):
 
@@ -415,10 +417,14 @@ File: `src/features/auth/LoginPage.tsx`
 Features:
 
 - Split-screen editorial layout
-- Dark gradient hero panel (left) with floating decorative accents
+- Adaptive hero panel with theme-aware gradients:
+  - **Dark mode**: Deep blue gradient (`#0c1222` → `#162032` → `#0f172a`)
+  - **Light mode**: Soft slate gradient (`#f8fafc` → `#e2e8f0` → `#cbd5e1`)
+  - Smooth transitions (0.3s) when switching color schemes
+- Floating decorative accents with primary color tint
 - Clean form panel (right) with staggered entrance animations
 - Responsive: hides hero on mobile
-- Distinctive visual identity
+- Distinctive visual identity that adapts to user preference
 
 ### Dashboard design
 

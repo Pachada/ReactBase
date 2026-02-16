@@ -8,6 +8,7 @@ import {
   Text,
   TextInput,
   Title,
+  useMantineColorScheme,
 } from '@mantine/core'
 import { Zap } from 'lucide-react'
 import { Controller, useForm } from 'react-hook-form'
@@ -35,6 +36,7 @@ export function LoginPage() {
   const location = useLocation()
   const auth = useAuth()
   const { addNotification } = useNotificationCenter()
+  const { colorScheme } = useMantineColorScheme()
   const state = (location.state as RouterState | null) ?? {}
   const redirectTo = state.from?.pathname ?? '/'
   const { register, control, handleSubmit, formState, setError } =
@@ -72,7 +74,7 @@ export function LoginPage() {
 
   return (
     <div className="login-shell">
-      <div className="login-hero">
+      <div className={`login-hero ${colorScheme === 'light' ? 'login-hero-light' : ''}`}>
         <div className="login-accent login-accent-1" />
         <div className="login-accent login-accent-2" />
         <div className="login-accent login-accent-3" />
