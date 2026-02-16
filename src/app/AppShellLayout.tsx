@@ -32,6 +32,7 @@ import {
   Link as RouterLink,
   NavLink as RouterNavLink,
   Outlet,
+  useLocation,
   useMatches,
 } from 'react-router-dom'
 import { useAuth } from '@/core/auth/AuthContext'
@@ -58,6 +59,7 @@ export function AppShellLayout() {
   })
   const { primaryColor, setPrimaryColor } = usePrimaryColorSettings()
   const auth = useAuth()
+  const location = useLocation()
   const matches = useMatches()
   const breadcrumbItems = matches
     .map((match) => {
@@ -73,6 +75,8 @@ export function AppShellLayout() {
     .filter((item): item is { label: string; path: string } => item !== null)
   const currentPageTitle =
     (matches.at(-1)?.handle as { title?: string } | undefined)?.title ?? 'Dashboard'
+  const isActiveLink = (to: string) =>
+    to === '/' ? location.pathname === '/' : location.pathname.startsWith(to)
 
   useDocumentTitle(`${currentPageTitle} | ReactBase`)
 
@@ -184,15 +188,30 @@ export function AppShellLayout() {
                 leftSection={<link.icon size={16} />}
                 component={RouterNavLink}
                 to={link.to}
+                active={isActiveLink(link.to)}
                 aria-label={link.label}
                 styles={
                   desktopCollapsed
                     ? {
-                        root: { width: 48, justifyContent: 'center' },
+                        root: {
+                          width: 48,
+                          justifyContent: 'center',
+                          '&:focus-visible': {
+                            outline: '2px solid var(--mantine-primary-color-filled)',
+                            outlineOffset: '2px',
+                          },
+                        },
                         label: { display: 'none' },
                         section: { marginInlineEnd: 0 },
                       }
-                    : undefined
+                    : {
+                        root: {
+                          '&:focus-visible': {
+                            outline: '2px solid var(--mantine-primary-color-filled)',
+                            outlineOffset: '2px',
+                          },
+                        },
+                      }
                 }
               />
             </Tooltip>
