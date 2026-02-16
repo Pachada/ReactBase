@@ -1,60 +1,55 @@
 # ReactBase
 
-Production-ready React application skeleton for building future apps quickly and consistently.
+Modern React application skeleton using Vite, TypeScript, Mantine, and enterprise-ready
+foundations.
 
-## Tech Stack
+## Tech stack
 
-- React + TypeScript (strict)
-- Vite + React Router
-- Tailwind CSS v4 + shadcn/ui primitives
-- Jest + Testing Library
-- ESLint + Prettier + pre-commit hooks
+- React 19 + TypeScript (strict)
+- Vite
+- React Router
+- Mantine + Lucide React
+- react-hook-form
+- Vitest + Testing Library
+- ESLint + Prettier + Husky + lint-staged
 
-## Getting Started
+## Development commands
 
 ```bash
 npm install
 npm run dev
+npm run lint
+npm run typecheck
+npm run test
+npm run build
 ```
 
-## Available Scripts
-
-- `npm run dev` - Start development server
-- `npm run build` - Type-check and create production build
-- `npm run preview` - Preview production build
-- `npm run test` - Run tests
-- `npm run lint` - Run formatting and lint checks
-- `npm run lint:fix` - Auto-fix formatting and lint issues
-- `npm run type-check` - Run TypeScript checks
-
-## Project Structure
+## Project structure
 
 ```text
-public/
 src/
-  Main.tsx
-  app/
-    api.ts
-    types.ts
-    test-utils.tsx
-    components/
-      layout/
-      ui/
-    contexts/
-    hooks/
-    pages/home/
-    utils/
-  styles/
+  app/          # app shell, providers, routing
+  core/         # auth, api client, env config
+  features/     # feature modules (auth, dashboard, components)
+  pages/        # shared route pages
+  test/         # test setup and utilities
 ```
 
-## Environment Variables
+## Environment variables
 
-Copy `.env.example` to `.env` and update values:
+Copy `.env.example` to `.env` and set:
 
-- `VITE_API_BASE_URL` - Backend API base URL
+- `VITE_API_BASE_URL`: backend API base URL
 
-## Testing Guidelines
+## Testing guidelines
 
-- Import render utilities from `@/app/test-utils`
-- Mock API calls through `@/app/api` to keep tests deterministic
-- Favor user-oriented assertions via Testing Library
+- Write UI tests with Testing Library.
+- Use `renderWithProviders` from `src/test/test-utils.tsx`.
+- Keep tests focused on user behavior and accessibility.
+
+## Code patterns
+
+- Route protection is centralized in `ProtectedRoute`.
+- Authentication state lives in `AuthContext`.
+- API calls should use `HttpClient` and typed response contracts.
+- Forms should use `react-hook-form` with explicit validation rules.
