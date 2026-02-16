@@ -1,4 +1,5 @@
 import {
+  ActionIcon,
   AppShell,
   Burger,
   Button,
@@ -7,9 +8,16 @@ import {
   Stack,
   Text,
   Title,
+  Tooltip,
 } from '@mantine/core'
-import { useDisclosure } from '@mantine/hooks'
-import { LayoutDashboard, Library, ShieldCheck } from 'lucide-react'
+import { useDisclosure, useLocalStorage } from '@mantine/hooks'
+import {
+  LayoutDashboard,
+  Library,
+  PanelLeftClose,
+  PanelLeftOpen,
+  ShieldCheck,
+} from 'lucide-react'
 import { NavLink as RouterNavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '@/core/auth/AuthContext'
 import { ROLE_LABEL } from '@/core/auth/roles'
@@ -22,18 +30,43 @@ const links = [
 
 export function AppShellLayout() {
   const [opened, { toggle }] = useDisclosure()
+  const [desktopCollapsed, setDesktopCollapsed] = useLocalStorage({
+    key: 'reactbase.navbar.desktop-collapsed',
+    defaultValue: false,
+    getInitialValueInEffect: true,
+  })
   const auth = useAuth()
 
   return (
     <AppShell
       header={{ height: 64 }}
-      navbar={{ width: 260, breakpoint: 'sm', collapsed: { mobile: !opened } }}
+      navbar={{
+        width: desktopCollapsed ? 80 : 260,
+        breakpoint: 'sm',
+        collapsed: { mobile: !opened },
+      }}
       padding="md"
     >
       <AppShell.Header>
         <Group h="100%" px="md" justify="space-between">
           <Group>
             <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
+            <ActionIcon
+              visibleFrom="sm"
+              variant="subtle"
+              aria-label={
+                desktopCollapsed
+                  ? 'Expand desktop navigation'
+                  : 'Collapse desktop navigation'
+              }
+              onClick={() => setDesktopCollapsed((value) => !value)}
+            >
+              {desktopCollapsed ? (
+                <PanelLeftOpen size={18} />
+              ) : (
+                <PanelLeftClose size={18} />
+              )}
+            </ActionIcon>
             <Title order={4}>ReactBase</Title>
           </Group>
           <Group>
@@ -49,15 +82,32 @@ export function AppShellLayout() {
         </Group>
       </AppShell.Header>
       <AppShell.Navbar p="md">
-        <Stack gap="xs">
+        <Stack gap="xs" align={desktopCollapsed ? 'center' : 'stretch'}>
           {links.map((link) => (
-            <NavLink
+            <Tooltip
               key={link.to}
               label={link.label}
-              leftSection={<link.icon size={16} />}
-              component={RouterNavLink}
-              to={link.to}
-            />
+              position="right"
+              disabled={!desktopCollapsed}
+              withArrow
+            >
+              <NavLink
+                label={link.label}
+                leftSection={<link.icon size={16} />}
+                component={RouterNavLink}
+                to={link.to}
+                aria-label={link.label}
+                styles={
+                  desktopCollapsed
+                    ? {
+                        root: { width: 48, justifyContent: 'center' },
+                        label: { display: 'none' },
+                        section: { marginInlineEnd: 0 },
+                      }
+                    : undefined
+                }
+              />
+            </Tooltip>
           ))}
         </Stack>
       </AppShell.Navbar>
