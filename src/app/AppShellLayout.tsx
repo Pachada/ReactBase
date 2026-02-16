@@ -7,6 +7,7 @@ import {
   Button,
   ColorSwatch,
   Group,
+  Indicator,
   Menu,
   NavLink,
   Stack,
@@ -18,11 +19,11 @@ import {
   useMantineColorScheme,
 } from '@mantine/core'
 import { useDocumentTitle, useDisclosure, useLocalStorage } from '@mantine/hooks'
-import { notifications } from '@mantine/notifications'
 import {
   Check,
   LayoutDashboard,
   Library,
+  Bell,
   Moon,
   Palette,
   PanelLeftClose,
@@ -40,6 +41,7 @@ import {
 } from 'react-router-dom'
 import { useAuth } from '@/core/auth/AuthContext'
 import { ROLE_LABEL } from '@/core/auth/roles'
+import { useNotificationCenter } from '@/core/notifications/NotificationCenterContext'
 import { usePrimaryColorSettings } from '@/core/theme/PrimaryColorContext'
 import { PRIMARY_COLOR_PRESETS } from '@/core/theme/color-presets'
 
@@ -71,6 +73,11 @@ export function AppShellLayout() {
     getInitialValueInEffect: true,
   })
   const { primaryColor, setPrimaryColor } = usePrimaryColorSettings()
+  const {
+    items: notificationItems,
+    addNotification,
+    clearNotifications,
+  } = useNotificationCenter()
   const auth = useAuth()
   const location = useLocation()
   const matches = useMatches()
@@ -145,7 +152,7 @@ export function AppShellLayout() {
                   size="xs"
                   variant={action.variant ?? 'default'}
                   onClick={() =>
-                    notifications.show({
+                    addNotification({
                       title: action.label,
                       message: 'Command action slot placeholder.',
                     })
@@ -157,6 +164,54 @@ export function AppShellLayout() {
             </Group>
           </Group>
           <Group>
+            <Menu shadow="md" width={320} position="bottom-end">
+              <Menu.Target>
+                <Indicator
+                  disabled={notificationItems.length === 0}
+                  inline
+                  label={notificationItems.length}
+                  size={16}
+                >
+                  <ActionIcon variant="subtle" aria-label="Open notification center">
+                    <Bell size={18} />
+                  </ActionIcon>
+                </Indicator>
+              </Menu.Target>
+              <Menu.Dropdown>
+                <Group justify="space-between" px="sm" py={6}>
+                  <Text size="sm" fw={600}>
+                    Notifications
+                  </Text>
+                  <Button
+                    size="compact-xs"
+                    variant="subtle"
+                    onClick={clearNotifications}
+                    disabled={notificationItems.length === 0}
+                  >
+                    Clear
+                  </Button>
+                </Group>
+                {notificationItems.length === 0 ? (
+                  <Menu.Label>No notifications yet</Menu.Label>
+                ) : (
+                  notificationItems.slice(0, 6).map((item) => (
+                    <Menu.Item key={item.id}>
+                      <Stack gap={2}>
+                        <Text size="sm" fw={600}>
+                          {item.title}
+                        </Text>
+                        <Text size="xs" c="dimmed">
+                          {item.message}
+                        </Text>
+                        <Text size="xs" c="dimmed">
+                          {new Date(item.createdAt).toLocaleTimeString()}
+                        </Text>
+                      </Stack>
+                    </Menu.Item>
+                  ))
+                )}
+              </Menu.Dropdown>
+            </Menu>
             <Tooltip
               label={
                 computedColorScheme === 'dark'

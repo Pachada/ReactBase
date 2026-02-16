@@ -10,10 +10,10 @@ import {
   TextInput,
   Title,
 } from '@mantine/core'
-import { notifications } from '@mantine/notifications'
 import { Controller, useForm } from 'react-hook-form'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/core/auth/AuthContext'
+import { useNotificationCenter } from '@/core/notifications/NotificationCenterContext'
 import { ROLE_OPTIONS } from '@/core/auth/roles'
 import type { Role } from '@/core/auth/types'
 
@@ -33,6 +33,7 @@ export function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const auth = useAuth()
+  const { addNotification } = useNotificationCenter()
   const state = (location.state as RouterState | null) ?? {}
   const redirectTo = state.from?.pathname ?? '/'
   const { register, control, handleSubmit, formState } = useForm<LoginFormValues>({
@@ -46,7 +47,7 @@ export function LoginPage() {
 
   const onSubmit = handleSubmit(async (values) => {
     await auth.login(values)
-    notifications.show({
+    addNotification({
       title: 'Welcome back',
       message: `Signed in as ${values.role}`,
       color: 'green',

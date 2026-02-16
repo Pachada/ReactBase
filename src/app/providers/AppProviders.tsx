@@ -7,6 +7,7 @@ import { useLocalStorage } from '@mantine/hooks'
 import { Notifications } from '@mantine/notifications'
 import { useMemo, type PropsWithChildren } from 'react'
 import { AuthProvider, useAuth } from '@/core/auth/AuthContext'
+import { NotificationCenterProvider } from '@/core/notifications/NotificationCenterContext'
 import { PrimaryColorContext } from '@/core/theme/PrimaryColorContext'
 import {
   CUSTOM_THEME_COLORS,
@@ -66,8 +67,10 @@ function ThemedProviders({ children }: PropsWithChildren) {
         defaultColorScheme="auto"
         colorSchemeManager={colorSchemeManager}
       >
-        <Notifications position="top-right" />
-        {children}
+        <NotificationCenterProvider>
+          <Notifications position="top-right" />
+          {children}
+        </NotificationCenterProvider>
       </MantineProvider>
     </PrimaryColorContext.Provider>
   )
