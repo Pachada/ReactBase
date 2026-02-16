@@ -3,7 +3,9 @@ import {
   AppShell,
   Burger,
   Button,
+  ColorSwatch,
   Group,
+  Menu,
   NavLink,
   Stack,
   Text,
@@ -14,9 +16,11 @@ import {
 } from '@mantine/core'
 import { useDisclosure, useLocalStorage } from '@mantine/hooks'
 import {
+  Check,
   LayoutDashboard,
   Library,
   Moon,
+  Palette,
   PanelLeftClose,
   PanelLeftOpen,
   ShieldCheck,
@@ -25,6 +29,8 @@ import {
 import { NavLink as RouterNavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '@/core/auth/AuthContext'
 import { ROLE_LABEL } from '@/core/auth/roles'
+import { usePrimaryColorSettings } from '@/core/theme/PrimaryColorContext'
+import { PRIMARY_COLOR_PRESETS } from '@/core/theme/color-presets'
 
 const links = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -43,6 +49,7 @@ export function AppShellLayout() {
   const computedColorScheme = useComputedColorScheme('light', {
     getInitialValueInEffect: true,
   })
+  const { primaryColor, setPrimaryColor } = usePrimaryColorSettings()
   const auth = useAuth()
 
   return (
@@ -100,6 +107,30 @@ export function AppShellLayout() {
                 {computedColorScheme === 'dark' ? <Moon size={18} /> : <Sun size={18} />}
               </ActionIcon>
             </Tooltip>
+            <Menu shadow="md" width={220} position="bottom-end">
+              <Menu.Target>
+                <ActionIcon variant="subtle" aria-label="Select primary color preset">
+                  <Palette size={18} />
+                </ActionIcon>
+              </Menu.Target>
+              <Menu.Dropdown>
+                <Menu.Label>Color preset</Menu.Label>
+                {PRIMARY_COLOR_PRESETS.map((preset) => (
+                  <Menu.Item
+                    key={preset.value}
+                    leftSection={<ColorSwatch color={preset.previewColor} size={14} />}
+                    rightSection={
+                      primaryColor === preset.value ? (
+                        <Check size={14} aria-hidden />
+                      ) : null
+                    }
+                    onClick={() => setPrimaryColor(preset.value)}
+                  >
+                    {preset.label}
+                  </Menu.Item>
+                ))}
+              </Menu.Dropdown>
+            </Menu>
             {auth.user && (
               <Text size="sm" c="dimmed">
                 {auth.user.name} ({ROLE_LABEL[auth.user.role]})
