@@ -1,9 +1,14 @@
 import type { AuthState } from '@/core/auth/types'
 
 const AUTH_STORAGE_KEY = 'reactbase.auth'
+const AUTH_REMEMBER_KEY = 'reactbase.auth.remember'
 
 export function loadAuthState(): AuthState {
-  const rawState = window.localStorage.getItem(AUTH_STORAGE_KEY)
+  // Check both localStorage and sessionStorage
+  const rememberMe = window.localStorage.getItem(AUTH_REMEMBER_KEY) === 'true'
+  const storage = rememberMe ? window.localStorage : window.sessionStorage
+  const rawState = storage.getItem(AUTH_STORAGE_KEY)
+
   if (!rawState) {
     return { user: null, token: null, status: 'anonymous' }
   }
@@ -16,11 +21,26 @@ export function loadAuthState(): AuthState {
   return { ...parsedState, status: 'authenticated' }
 }
 
-export function saveAuthState(state: AuthState): void {
+export function saveAuthState(state: AuthState, rememberMe = false): void {
   if (state.status === 'anonymous') {
     window.localStorage.removeItem(AUTH_STORAGE_KEY)
+    window.sessionStorage.removeItem(AUTH_STORAGE_KEY)
+    window.localStorage.removeItem(AUTH_REMEMBER_KEY)
     return
   }
 
-  window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(state))
+  // Save remember preference
+  window.localStorage.setItem(AUTH_REMEMBER_KEY, rememberMe ? 'true' : 'false')
+
+  // Save auth state to appropriate storage
+  const storage = rememberMe ? window.localStorage : window.sessionStorage
+  storage.setItem(AUTH_STORAGE_KEY, JSON.stringify(state))
+
+  // Clear from the other storage
+  const otherStorage = rememberMe ? window.sessionStorage : window.localStorage
+  otherStorage.removeItem(AUTH_STORAGE_KEY)
+}
+
+export function getRememberMePreference(): boolean {
+  return window.localStorage.getItem(AUTH_REMEMBER_KEY) === 'true'
 }

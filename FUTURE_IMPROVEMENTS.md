@@ -21,6 +21,13 @@ This document tracks potential enhancements for the ReactBase skeleton app, orga
 - [x] **Dark mode login hero** — Login hero panel dynamically adjusts colors based on light/dark theme
 - [x] **Font picker with preview** — Interactive dropdown with 13 curated Google Fonts and live preview panel
 
+### Authentication & Authorization
+
+- [x] **Session timeout warning** — Countdown modal before auto-logout when auth token expires (30min sessions)
+- [x] **Remember me** — Checkbox on login controlling token persistence (session storage vs localStorage)
+- [x] **Forgot password flow** — Complete password reset UI with email submission and success state
+- [x] **Sign up flow** — Account creation page with validation and role selection
+
 ---
 
 ## UI/UX Enhancements
@@ -37,10 +44,12 @@ This document tracks potential enhancements for the ReactBase skeleton app, orga
 ## Authentication & Authorization
 
 - [ ] **OAuth/OIDC integration scaffold** — Add a pluggable auth adapter pattern with examples for Auth0, Clerk, and Supabase Auth.
-- [ ] **Session timeout warning** — Show a countdown modal before auto-logout when the auth token is about to expire.
-- [ ] **Remember me** — Add a "Remember me" checkbox on login that controls token persistence strategy (session vs. localStorage).
 - [ ] **Multi-factor auth UI** — Add a TOTP/OTP input step after password verification for MFA-ready flows.
 - [ ] **Permission-based UI** — Extend RBAC from role-level to granular permission-level visibility (e.g., `canEditUsers`, `canViewAuditLog`).
+- [ ] **Email verification flow** — Send verification email after signup with token validation.
+- [ ] **Reset password page** — Complete password reset flow with token from email link.
+- [ ] **Social login** — OAuth integration with Google/GitHub/Microsoft providers.
+- [ ] **Session management UI** — View and revoke active sessions across devices.
 
 ## Data & API
 

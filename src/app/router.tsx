@@ -2,6 +2,8 @@ import { createBrowserRouter } from 'react-router-dom'
 import { AppShellLayout } from '@/app/AppShellLayout'
 import { ProtectedRoute } from '@/app/routes/ProtectedRoute'
 import { LoginPage } from '@/features/auth/LoginPage'
+import { SignUpPage } from '@/features/auth/SignUpPage'
+import { ForgotPasswordPage } from '@/features/auth/ForgotPasswordPage'
 import { AdminPage } from '@/features/dashboard/AdminPage'
 import { ComponentsPage } from '@/features/dashboard/ComponentsPage'
 import { DashboardPage } from '@/features/dashboard/DashboardPage'
@@ -13,6 +15,20 @@ export const router = createBrowserRouter([
     element: <LoginPage />,
     handle: {
       title: 'Sign in',
+    },
+  },
+  {
+    path: '/signup',
+    element: <SignUpPage />,
+    handle: {
+      title: 'Sign up',
+    },
+  },
+  {
+    path: '/forgot-password',
+    element: <ForgotPasswordPage />,
+    handle: {
+      title: 'Forgot password',
     },
   },
   {

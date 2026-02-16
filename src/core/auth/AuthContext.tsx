@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type PropsWithChildren,
@@ -10,11 +11,14 @@ import { loadAuthState, saveAuthState } from '@/core/auth/auth-storage'
 import type { AuthState, LoginCredentials, Role } from '@/core/auth/types'
 
 const DEMO_PASSWORD = 'changeme'
+const SESSION_TIMEOUT_MS = 30 * 60 * 1000 // 30 minutes
 
 interface AuthContextValue extends AuthState {
-  login: (credentials: LoginCredentials) => Promise<void>
+  login: (credentials: LoginCredentials, rememberMe?: boolean) => Promise<void>
   logout: () => void
   hasRole: (roles: Role[]) => boolean
+  sessionExpiresAt: number | null
+  resetSessionTimer: () => void
 }
 
 const defaultState: AuthState = {
@@ -27,8 +31,15 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
 export function AuthProvider({ children }: PropsWithChildren) {
   const [authState, setAuthState] = useState<AuthState>(() => loadAuthState())
+  const [sessionExpiresAt, setSessionExpiresAt] = useState<number | null>(null)
 
-  const login = useCallback(async (credentials: LoginCredentials) => {
+  const resetSessionTimer = useCallback(() => {
+    if (authState.status === 'authenticated') {
+      setSessionExpiresAt(Date.now() + SESSION_TIMEOUT_MS)
+    }
+  }, [authState.status])
+
+  const login = useCallback(async (credentials: LoginCredentials, rememberMe = false) => {
     if (credentials.password !== DEMO_PASSWORD) {
       throw new Error('Invalid credentials. Use password "changeme".')
     }
@@ -44,13 +55,21 @@ export function AuthProvider({ children }: PropsWithChildren) {
       status: 'authenticated',
     }
 
-    saveAuthState(nextState)
+    saveAuthState(nextState, rememberMe)
     setAuthState(nextState)
+
+    // Only set session timeout if not remembering (session storage)
+    if (!rememberMe) {
+      setSessionExpiresAt(Date.now() + SESSION_TIMEOUT_MS)
+    } else {
+      setSessionExpiresAt(null)
+    }
   }, [])
 
   const logout = useCallback(() => {
     saveAuthState(defaultState)
     setAuthState(defaultState)
+    setSessionExpiresAt(null)
   }, [])
 
   const hasRole = useCallback(
@@ -61,14 +80,30 @@ export function AuthProvider({ children }: PropsWithChildren) {
     [authState.status, authState.user],
   )
 
+  // Initialize session timer on mount if logged in with session storage
+  useEffect(() => {
+    if (authState.status === 'authenticated') {
+      const rememberMe = window.localStorage.getItem('reactbase.auth.remember') === 'true'
+      if (!rememberMe && !sessionExpiresAt) {
+        // Use setTimeout to avoid setting state directly in effect
+        const timer = setTimeout(() => {
+          setSessionExpiresAt(Date.now() + SESSION_TIMEOUT_MS)
+        }, 0)
+        return () => clearTimeout(timer)
+      }
+    }
+  }, [authState.status, sessionExpiresAt])
+
   const value = useMemo(
     () => ({
       ...authState,
       login,
       logout,
       hasRole,
+      sessionExpiresAt,
+      resetSessionTimer,
     }),
-    [authState, hasRole, login, logout],
+    [authState, hasRole, login, logout, sessionExpiresAt, resetSessionTimer],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

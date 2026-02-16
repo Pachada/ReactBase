@@ -7,6 +7,7 @@ import { useLocalStorage } from '@mantine/hooks'
 import { Notifications } from '@mantine/notifications'
 import { useMemo, type PropsWithChildren } from 'react'
 import { AuthProvider, useAuth } from '@/core/auth/AuthContext'
+import { SessionTimeoutWarning } from '@/core/auth/SessionTimeoutWarning'
 import { NotificationCenterProvider } from '@/core/notifications/NotificationCenterContext'
 import { PrimaryColorContext } from '@/core/theme/PrimaryColorContext'
 import {
@@ -88,6 +89,7 @@ function ThemedProviders({ children }: PropsWithChildren) {
           defaultColorScheme="auto"
           colorSchemeManager={colorSchemeManager}
         >
+          <SessionTimeoutWarning />
           <NotificationCenterProvider>
             <Notifications position={tokens.notificationPosition} />
             {children}
