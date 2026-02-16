@@ -14,6 +14,7 @@ import { Controller, useForm } from 'react-hook-form'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/core/auth/AuthContext'
 import { useNotificationCenter } from '@/core/notifications/NotificationCenterContext'
+import { ErrorStateAlert } from '@/core/ui/ErrorStateAlert'
 import { ROLE_OPTIONS } from '@/core/auth/roles'
 import type { Role } from '@/core/auth/types'
 
@@ -36,23 +37,37 @@ export function LoginPage() {
   const { addNotification } = useNotificationCenter()
   const state = (location.state as RouterState | null) ?? {}
   const redirectTo = state.from?.pathname ?? '/'
-  const { register, control, handleSubmit, formState } = useForm<LoginFormValues>({
-    defaultValues: {
-      username: '',
-      password: '',
-      role: 'viewer',
-    },
-    mode: 'onBlur',
-  })
+  const { register, control, handleSubmit, formState, setError } =
+    useForm<LoginFormValues>({
+      defaultValues: {
+        username: '',
+        password: '',
+        role: 'viewer',
+      },
+      mode: 'onBlur',
+    })
 
   const onSubmit = handleSubmit(async (values) => {
-    await auth.login(values)
-    addNotification({
-      title: 'Welcome back',
-      message: `Signed in as ${values.role}`,
-      color: 'green',
-    })
-    navigate(redirectTo, { replace: true })
+    try {
+      await auth.login(values)
+      addNotification({
+        title: 'Welcome back',
+        message: `Signed in as ${values.role}`,
+        color: 'green',
+      })
+      navigate(redirectTo, { replace: true })
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Unable to sign in right now. Please try again.'
+      addNotification({
+        title: 'Sign-in failed',
+        message,
+        color: 'red',
+      })
+      setError('root', { message })
+    }
   })
 
   return (
@@ -94,7 +109,23 @@ export function LoginPage() {
               )}
             />
             {formState.errors.root && (
-              <Alert color="red">{formState.errors.root.message}</Alert>
+              <ErrorStateAlert
+                title="Authentication error"
+                message={formState.errors.root.message ?? 'Unable to sign in right now.'}
+                actionLabel='Use demo password "changeme"'
+                onAction={() => {
+                  const message = formState.errors.root?.message
+                  if (!message) {
+                    return
+                  }
+
+                  addNotification({
+                    title: 'Tip',
+                    message: 'Use password "changeme" and submit again.',
+                    color: 'blue',
+                  })
+                }}
+              />
             )}
             <Button type="submit" loading={formState.isSubmitting}>
               Sign in

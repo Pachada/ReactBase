@@ -9,3 +9,17 @@ body,
   outline: 2px solid var(--mantine-primary-color-filled);
   outline-offset: 2px;
 }
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0.5rem;
+  z-index: 1000;
+}
+
+.skip-link:focus-visible {
+  left: 0.75rem;
+  background: var(--mantine-color-body);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+}

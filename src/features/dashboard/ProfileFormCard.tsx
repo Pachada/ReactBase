@@ -1,6 +1,19 @@
-import { Button, Card, Group, Select, Stack, TextInput, Title } from '@mantine/core'
+import {
+  Alert,
+  Button,
+  Card,
+  Group,
+  Select,
+  Skeleton,
+  Stack,
+  TextInput,
+  Title,
+} from '@mantine/core'
+import { useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
+import { useNotificationCenter } from '@/core/notifications/NotificationCenterContext'
 import { ROLE_OPTIONS } from '@/core/auth/roles'
+import { ErrorStateAlert } from '@/core/ui/ErrorStateAlert'
 import type { Role } from '@/core/auth/types'
 
 interface ProfileFormValues {
@@ -10,6 +23,10 @@ interface ProfileFormValues {
 }
 
 export function ProfileFormCard() {
+  const { addNotification } = useNotificationCenter()
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'success' | 'error'>(
+    'idle',
+  )
   const { register, control, handleSubmit, formState } = useForm<ProfileFormValues>({
     defaultValues: {
       fullName: '',
@@ -19,8 +36,19 @@ export function ProfileFormCard() {
     mode: 'onBlur',
   })
 
-  const onSubmit = handleSubmit(() => {
-    // skeleton extension point for real mutation calls
+  const onSubmit = handleSubmit(async () => {
+    setSaveState('saving')
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 500))
+      setSaveState('success')
+      addNotification({
+        title: 'Profile saved',
+        message: 'Profile changes were saved locally.',
+        color: 'green',
+      })
+    } catch {
+      setSaveState('error')
+    }
   })
 
   return (
@@ -61,8 +89,26 @@ export function ProfileFormCard() {
             )}
           />
           <Group justify="flex-end">
-            <Button type="submit">Save profile</Button>
+            <Button type="submit" loading={saveState === 'saving'}>
+              Save profile
+            </Button>
           </Group>
+          {saveState === 'saving' && <Skeleton h={52} radius="md" />}
+          {saveState === 'success' && (
+            <Alert color="green" variant="light">
+              Changes saved. You can keep editing while data sync completes.
+            </Alert>
+          )}
+          {saveState === 'error' && (
+            <ErrorStateAlert
+              title="Profile update failed"
+              message="We could not save your profile right now."
+              actionLabel="Retry"
+              onAction={() => {
+                setSaveState('idle')
+              }}
+            />
+          )}
         </Stack>
       </form>
     </Card>

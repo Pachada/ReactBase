@@ -113,7 +113,10 @@ export function AppShellLayout() {
       }}
       padding="md"
     >
-      <AppShell.Header>
+      <Anchor href="#main-content" className="skip-link">
+        Skip to main content
+      </Anchor>
+      <AppShell.Header component="header">
         <Group h="100%" px="md" justify="space-between">
           <Group>
             <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
@@ -269,7 +272,7 @@ export function AppShellLayout() {
           </Group>
         </Group>
       </AppShell.Header>
-      <AppShell.Navbar p="md">
+      <AppShell.Navbar p="md" component="nav" aria-label="Primary">
         <Stack gap="xs" align={desktopCollapsed ? 'center' : 'stretch'}>
           {links.map((link) => (
             <Tooltip
@@ -314,7 +317,7 @@ export function AppShellLayout() {
           ))}
         </Stack>
       </AppShell.Navbar>
-      <AppShell.Main>
+      <AppShell.Main component="main" id="main-content" tabIndex={-1}>
         {breadcrumbItems.length > 0 && (
           <Breadcrumbs mb="sm">
             {breadcrumbItems.map((item, index) =>

@@ -21,6 +21,8 @@ import {
 } from '@mantine/core'
 import { AreaChart, BarChart, LineChart } from '@mantine/charts'
 import { useMemo, useState } from 'react'
+import { useNotificationCenter } from '@/core/notifications/NotificationCenterContext'
+import { ErrorStateAlert } from '@/core/ui/ErrorStateAlert'
 
 const releaseData = [
   { month: 'Jan', frontend: 18, backend: 12 },
@@ -43,6 +45,7 @@ const deployRows = [
 const PAGE_SIZE = 4
 
 export function ComponentsPage() {
+  const { addNotification } = useNotificationCenter()
   const [enabled, setEnabled] = useState(true)
   const [query, setQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
@@ -55,6 +58,7 @@ export function ComponentsPage() {
   const [showBackendSeries, setShowBackendSeries] = useState(true)
   const [isChartLoading, setIsChartLoading] = useState(false)
   const [isChartEmpty, setIsChartEmpty] = useState(false)
+  const [hasChartError, setHasChartError] = useState(false)
 
   const filteredRows = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase()
@@ -110,6 +114,22 @@ export function ComponentsPage() {
   )
 
   const chartData = isChartEmpty ? [] : releaseData
+  const refreshChartData = () => {
+    setHasChartError(false)
+    setIsChartLoading(true)
+    setTimeout(() => {
+      const shouldError = Math.random() < 0.25
+      setIsChartLoading(false)
+      setHasChartError(shouldError)
+      addNotification({
+        title: shouldError ? 'Chart refresh failed' : 'Chart refreshed',
+        message: shouldError
+          ? 'Unable to sync chart data, please retry.'
+          : 'Chart data has been updated.',
+        color: shouldError ? 'red' : 'green',
+      })
+    }, 500)
+  }
   const toggleSortDirection = () =>
     setSortDirection((value) => (value === 'asc' ? 'desc' : 'asc'))
   const togglePageSelection = (checked: boolean) => {
@@ -344,8 +364,18 @@ export function ComponentsPage() {
                 checked={isChartEmpty}
                 onChange={(event) => setIsChartEmpty(event.currentTarget.checked)}
               />
+              <Button size="xs" variant="default" onClick={refreshChartData}>
+                Refresh data
+              </Button>
             </Group>
-            {isChartLoading ? (
+            {hasChartError ? (
+              <ErrorStateAlert
+                title="Chart data unavailable"
+                message="We could not load chart data from the API."
+                actionLabel="Retry"
+                onAction={refreshChartData}
+              />
+            ) : isChartLoading ? (
               <Skeleton h={220} radius="md" />
             ) : chartData.length === 0 ? (
               <Text size="sm" c="dimmed">
