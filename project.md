@@ -9,6 +9,7 @@ This file describes how the project is currently set up and exactly where to con
 - **Routing**: React Router
 - **Forms**: react-hook-form
 - **Icons**: lucide-react
+- **Animations**: framer-motion (page transitions)
 - **Testing**: Vitest + Testing Library + jsdom
 - **Quality**: ESLint (flat config), Prettier, Husky, lint-staged
 
@@ -174,7 +175,8 @@ Editable tokens today:
 
 - `brandName`
 - `radius` (`sm | md | lg | xl`)
-- `fontFamily`
+- `fontFamily` (default: `Outfit, system-ui, sans-serif`)
+- `notificationPosition` (`top-right | bottom-right | bottom-center`)
 
 Effects:
 
@@ -226,7 +228,131 @@ Behavior:
 - If not completed, panel shows step-by-step coachmarks
 - Help icon restarts tour
 
-### 6.8 Accessibility baseline
+### 6.8 Mobile navigation (bottom tab bar)
+
+Implemented in:
+
+- `src/app/AppShellLayout.tsx` (mobile-bottom-nav component)
+- `src/index.css` (mobile-bottom-nav styles)
+
+Features:
+
+- Thumb-zone optimized bottom navigation bar (< 768px)
+- Active state highlighting with primary color
+- Role-based visibility (admin tab for admins only)
+- Safe area inset support for notched devices
+- Replaces hamburger menu on mobile for faster access
+
+Navigation items:
+
+- Dashboard, Components, Admin (role-gated), Settings
+
+### 6.9 Page transitions
+
+Component:
+
+- `src/core/ui/PageTransition.tsx`
+
+Behavior:
+
+- Wraps page content with framer-motion animations
+- Entry: 380ms fade + slide-up with custom easing
+- Exit: 220ms fade + slide-down
+- Smooth, production-grade transitions
+
+Usage:
+
+```tsx
+import { PageTransition } from '@/core/ui/PageTransition'
+
+export function MyPage() {
+  return (
+    <PageTransition>
+      <Stack>{/* content */}</Stack>
+    </PageTransition>
+  )
+}
+```
+
+### 6.10 Skeleton loading states
+
+Components:
+
+- `src/core/ui/SkeletonLoaders.tsx`
+
+Available loaders:
+
+- `DashboardStatCardSkeleton` — Stat cards with icon + text
+- `DashboardCardSkeleton` — General cards
+- `TableSkeleton` — Data tables with filters
+- `ChartSkeleton` — Charts with controls
+
+Features:
+
+- Shimmer animation (1.5s ease-in-out infinite)
+- Matches actual component dimensions
+- CSS-based animation for performance
+
+### 6.11 Empty states with illustrations
+
+Component:
+
+- `src/core/ui/EmptyState.tsx`
+
+Illustrations:
+
+- `no-data` — Dashed chart with dots (missing datasets)
+- `no-results` — Magnifying glass with X (search/filter)
+- `no-notifications` — Bell with slash (notification center)
+
+Usage:
+
+```tsx
+<EmptyState
+  illustration="no-results"
+  title="No matches found"
+  description="Try adjusting your filters"
+  action={<Button>Clear filters</Button>}
+/>
+```
+
+### 6.12 Scroll to top button
+
+Component:
+
+- `src/core/ui/ScrollToTop.tsx`
+
+Behavior:
+
+- Appears after scrolling 400px
+- Slide-up transition (300ms)
+- Fixed position (bottom-right)
+- Auto-adjusts position for mobile bottom nav
+- Smooth scroll to top on click
+
+Integrated in:
+
+- `src/app/AppShellLayout.tsx`
+
+### 6.13 Micro-interactions
+
+Implemented in:
+
+- `src/index.css`
+
+Effects:
+
+- Button/icon hover: `translateY(-1px)` lift
+- Button/icon active: `scale(0.96)` press feedback
+- Ripple effect: Radial gradient animation (600ms)
+- Card hover: lift + shadow enhancement
+
+CSS classes:
+
+- `.btn-ripple` — For ripple effect on click
+- All Mantine buttons/icons have micro-interactions by default
+
+### 6.14 Accessibility baseline
 
 Implemented in:
 
@@ -238,10 +364,74 @@ Patterns:
 
 - Skip link (`Skip to main content`)
 - Semantic landmarks (`header`, `nav`, `main`)
-- Global `:focus-visible` outline rule
+- Global `:focus-visible` outline rule (2px primary color)
 - Alert components with ARIA-friendly semantics
+- 44px minimum touch targets on mobile
+- Keyboard navigation support
 
-## 7) Dashboard and components showcase configuration
+## 7) Design system and UI patterns
+
+### Typography
+
+- Primary font: **Outfit** (via Google Fonts)
+- Font weights: 300, 400, 500, 600, 700, 800
+- Distinctive geometric sans-serif with character
+- Replaces generic Inter for memorable brand identity
+
+### Animations and motion
+
+Global animations in `src/index.css`:
+
+- `fadeSlideUp` — Entry animation (0.38s)
+- `scaleIn` — Scale entrance (0.5s)
+- `float` — Floating effect for decorative elements
+- `shimmer-slide` — Loading skeleton animation (1.8s)
+- `ripple` — Click feedback (0.6s)
+
+Usage:
+
+- `.page-enter` — Page entrance animation
+- `.shimmer-loading` — Shimmer effect on elements
+- `.btn-ripple` — Button ripple on click
+
+### Color strategy
+
+- Cohesive aesthetic with dominant primary color
+- 6 color presets (Indigo, Blue, Teal, Grape, Brand, Client Forest)
+- Custom 10-shade color scales
+- User-selectable via palette picker in header
+
+### Visual effects
+
+- **Backdrop blur header**: `blur(12px)` + semi-transparent background
+- **Card hover lift**: `translateY(-2px)` + enhanced shadow
+- **Custom scrollbar**: Thin (6px), subtle, theme-aware
+- **Glassmorphism**: Header and mobile bottom nav
+
+### Login page design
+
+File: `src/features/auth/LoginPage.tsx`
+
+Features:
+
+- Split-screen editorial layout
+- Dark gradient hero panel (left) with floating decorative accents
+- Clean form panel (right) with staggered entrance animations
+- Responsive: hides hero on mobile
+- Distinctive visual identity
+
+### Dashboard design
+
+File: `src/features/dashboard/DashboardPage.tsx`
+
+Features:
+
+- Time-of-day personalized greeting
+- 4 stat cards with themed icons (RBAC, Typed API, Color presets, Components)
+- Page entrance animation
+- Layout preset toggle (compact vs detailed)
+
+## 8) Dashboard and components showcase configuration
 
 ### Dashboard page
 
@@ -275,7 +465,9 @@ Note:
 
 - Current refresh behavior is mock/simulated (randomized error for demo)
 
-## 8) Error-state standard
+## 9) Error and empty state patterns
+
+### Error-state component
 
 Reusable component:
 
@@ -288,37 +480,158 @@ Used by:
 
 Pattern:
 
-- clear title
-- actionable message
-- optional contextual button (`actionLabel` + `onAction`)
+- Clear title with AlertTriangle icon
+- Actionable message
+- Optional contextual button (`actionLabel` + `onAction`)
+- Red color variant for errors
 
-## 9) How to add a new route correctly
+### Empty-state component
+
+Reusable component:
+
+- `src/core/ui/EmptyState.tsx`
+
+Illustrations:
+
+- `no-data`, `no-results`, `no-notifications`
+- Custom inline SVG illustrations
+- Icon fallback option
+
+Pattern:
+
+- Centered layout with illustration/icon
+- Title + description
+- Optional action button
+- Used for: empty tables, no search results, no notifications
+
+## 10) GitHub Copilot Skills
+
+Location: `.github/skills/`
+
+### frontend-design skill
+
+File: `.github/skills/frontend-design/SKILL.md`
+
+Purpose:
+
+- Guides creation of distinctive, production-grade frontend interfaces
+- Avoids generic AI aesthetics
+- Provides design thinking framework
+
+Usage:
+
+```bash
+/frontend-design create a pricing page
+```
+
+Content:
+
+- Design thinking framework (purpose, tone, constraints, differentiation)
+- 10 aesthetic direction options
+- Typography, color, motion, layout guidelines
+- Anti-pattern checklist
+- Real examples from this project
+
+## 11) How to add a new route correctly
 
 1. Add route in `src/app/router.tsx`.
 2. Add `handle` metadata (`title`, `breadcrumb`, optional command area data).
-3. Add navigation entry in `navGroups` inside `src/app/AppShellLayout.tsx`.
-4. If role-restricted, add `roles` on nav item and/or wrap route with `ProtectedRoute`.
+3. Wrap page component with `PageTransition` for smooth animations.
+4. Add navigation entry in `navGroups` inside `src/app/AppShellLayout.tsx`.
+5. If role-restricted, add `roles` on nav item and/or wrap route with `ProtectedRoute`.
+6. Add to mobile bottom nav if it's a primary route.
 
-## 10) LocalStorage key index (quick reference)
+## 12) LocalStorage key index (quick reference)
 
 - `reactbase.auth`
 - `reactbase.theme.<user>`
 - `reactbase.primary-color.<user>`
-- `reactbase.theme-tokens.<user>`
+- `reactbase.theme-tokens.<user>` (includes `notificationPosition`)
 - `reactbase.navbar.desktop-collapsed`
 - `reactbase.navbar.group-collapsed`
 - `reactbase.dashboard.layout-preset`
 - `reactbase.onboarding.completed`
 
-## 11) Testing and tooling notes
+## 13) Reusable UI components
+
+Core UI library in `src/core/ui/`:
+
+- `ErrorStateAlert.tsx` — Error states with icon + action
+- `EmptyState.tsx` — Empty states with SVG illustrations
+- `PageTransition.tsx` — Framer Motion page wrapper
+- `SkeletonLoaders.tsx` — Loading state skeletons (stat cards, tables, charts)
+- `ScrollToTop.tsx` — Floating scroll-to-top button
+
+Usage pattern:
+
+```tsx
+import { EmptyState } from '@/core/ui/EmptyState'
+import { PageTransition } from '@/core/ui/PageTransition'
+import { DashboardStatCardSkeleton } from '@/core/ui/SkeletonLoaders'
+
+// In your page component
+export function MyPage() {
+  return (
+    <PageTransition>
+      <Stack>
+        {loading && <DashboardStatCardSkeleton />}
+        {!loading && data.length === 0 && (
+          <EmptyState
+            illustration="no-data"
+            title="No data yet"
+            description="Get started by adding your first item"
+          />
+        )}
+      </Stack>
+    </PageTransition>
+  )
+}
+```
+
+## 14) Testing and tooling notes
 
 - Vitest config is in `vite.config.ts` (`jsdom`, globals, setup file).
 - Test setup file: `src/test/setup.ts`.
 - Lint + format hooks run through Husky/lint-staged from `package.json`.
 
-## 12) Current implementation boundaries
+## 15) Current implementation boundaries
 
 - Global command search input is currently placeholder-only UI (no backend query wiring yet).
 - Command area actions currently show placeholder notifications.
 - Notification feed is in-memory per session (not persisted to localStorage/backend).
 - Auth is demo-mode and must be replaced for production.
+- Page transitions use framer-motion (adds ~120KB to bundle).
+- Skeleton loaders are presentational (wire to actual data fetching hooks).
+- Mobile bottom nav is CSS-hidden on desktop (not code-split).
+
+## 16) Design principles applied
+
+This skeleton follows industrial/utilitarian aesthetic with modern refinements:
+
+**Typography**: Outfit font family (distinctive, geometric, characterful)
+
+**Color**: Dominant primary color + sharp accents (not evenly distributed)
+
+**Motion**: Purposeful animations that enhance usability
+
+- Page transitions for spatial continuity
+- Micro-interactions for tactile feedback
+- Loading skeletons for perceived performance
+
+**Layout**: Thumb-zone optimization on mobile, generous whitespace on desktop
+
+**Visual details**:
+
+- Backdrop blur effects (glassmorphism)
+- Custom SVG illustrations (not stock icons)
+- Shimmer loading animations
+- Subtle card hover effects
+
+**Accessibility**:
+
+- 44px minimum touch targets on mobile
+- Semantic HTML with ARIA labels
+- Keyboard navigation support
+- Focus-visible outlines (2px primary color)
+
+See `.github/skills/frontend-design/SKILL.md` for complete design guidelines.

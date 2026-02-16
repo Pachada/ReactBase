@@ -89,7 +89,7 @@ function ThemedProviders({ children }: PropsWithChildren) {
           colorSchemeManager={colorSchemeManager}
         >
           <NotificationCenterProvider>
-            <Notifications position="top-right" />
+            <Notifications position={tokens.notificationPosition} />
             {children}
           </NotificationCenterProvider>
         </MantineProvider>

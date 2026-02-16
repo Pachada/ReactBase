@@ -55,6 +55,7 @@ import { useNotificationCenter } from '@/core/notifications/NotificationCenterCo
 import { usePrimaryColorSettings } from '@/core/theme/PrimaryColorContext'
 import { PRIMARY_COLOR_PRESETS } from '@/core/theme/color-presets'
 import { useThemeTokens } from '@/core/theme/ThemeTokensContext'
+import { ScrollToTop } from '@/core/ui/ScrollToTop'
 
 type AppRouteHandle = {
   breadcrumb?: string
@@ -570,6 +571,22 @@ export function AppShellLayout() {
             value={tokens.fontFamily}
             onChange={(event) => updateTokens({ fontFamily: event.currentTarget.value })}
           />
+          <Select
+            label="Notification position"
+            value={tokens.notificationPosition}
+            onChange={(value) =>
+              updateTokens({
+                notificationPosition:
+                  (value as 'top-right' | 'bottom-right' | 'bottom-center') ??
+                  tokens.notificationPosition,
+              })
+            }
+            data={[
+              { value: 'top-right', label: 'Top Right' },
+              { value: 'bottom-right', label: 'Bottom Right' },
+              { value: 'bottom-center', label: 'Bottom Center' },
+            ]}
+          />
           <Group justify="space-between">
             <Button variant="subtle" onClick={resetTokens}>
               Reset defaults
@@ -653,6 +670,9 @@ export function AppShellLayout() {
           </button>
         </div>
       </nav>
+
+      {/* Scroll to top button */}
+      <ScrollToTop />
     </AppShell>
   )
 }

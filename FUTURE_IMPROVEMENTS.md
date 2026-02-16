@@ -8,14 +8,12 @@ This document tracks potential enhancements for the ReactBase skeleton app, orga
 
 - [ ] **Animated page transitions** — Add route-level transition animations using `framer-motion` or `@formkit/auto-animate` for smooth page-to-page navigation instead of CSS-only `page-enter`.
 - [ ] **Skeleton loading states** — Add shimmer skeleton placeholders for every data-fetching section (dashboard cards, table, chart) to improve perceived performance.
-- [ ] **Command palette (⌘K)** — Wire the existing search input to a full command palette overlay (e.g., `cmdk`) for keyboard-driven navigation, theme switching, and quick actions.
 - [ ] **Breadcrumb dropdown navigation** — Make breadcrumb segments interactive with dropdown menus to jump between sibling routes.
 - [ ] **Toast positioning preference** — Let users choose notification toast position (top-right, bottom-right, bottom-center) via the theme token editor.
 - [ ] **Mobile bottom navigation** — Replace the sidebar hamburger menu on mobile with a bottom tab bar for faster thumb-zone access.
-- [ ] **Responsive dashboard grid** — Add drag-and-drop dashboard card reordering with persistent layout using `react-grid-layout`.
-- [ ] **Empty state illustrations** — Add contextual SVG illustrations for empty states (no data, no results, no notifications) instead of plain text.
+- [ ] **Empty state illustrations** — Add contextual SVG illustrations for empty states (no data, no results, no notifications) instead of plain text..
 - [ ] **Micro-interaction feedback** — Add haptic-style visual feedback on button clicks (ripple or scale-down effect) for a more tactile feel.
-- [ ] **Scroll-to-top button** — Add a floating scroll-to-top button on long pages that appears after scrolling past a threshold.
+- [ ] **Scroll-to-top button** — Add a floating scroll-to-top button on long pages that appears after scrolling past a threshold
 
 ## Theme & Branding
 

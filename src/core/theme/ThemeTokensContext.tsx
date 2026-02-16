@@ -4,6 +4,7 @@ export interface ThemeTokens {
   brandName: string
   radius: 'sm' | 'md' | 'lg' | 'xl'
   fontFamily: string
+  notificationPosition: 'top-right' | 'bottom-right' | 'bottom-center'
 }
 
 interface ThemeTokensContextValue {
@@ -16,6 +17,7 @@ export const DEFAULT_THEME_TOKENS: ThemeTokens = {
   brandName: 'ReactBase',
   radius: 'md',
   fontFamily: 'Outfit, system-ui, sans-serif',
+  notificationPosition: 'top-right',
 }
 
 export const ThemeTokensContext = createContext<ThemeTokensContextValue | null>(null)

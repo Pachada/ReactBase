@@ -396,4 +396,91 @@ body,
   .mantine-Title-root {
     font-size: 1.1rem !important;
   }
+
+  /* Adjust scroll-to-top for mobile bottom nav */
+  .scroll-to-top-btn {
+    bottom: calc(5rem + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+/* ──── Micro-interactions ──── */
+.mantine-Button-root,
+.mantine-ActionIcon-root {
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    background-color 0.15s ease !important;
+}
+
+.mantine-Button-root:active:not(:disabled),
+.mantine-ActionIcon-root:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.mantine-Button-root:hover:not(:disabled),
+.mantine-ActionIcon-root:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+/* Ripple effect on click */
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+.btn-ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-ripple::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle,
+    var(--mantine-primary-color-filled) 0%,
+    transparent 70%
+  );
+  opacity: 0;
+  pointer-events: none;
+  animation: ripple 0.6s ease-out;
+}
+
+/* ──── Shimmer loading animation ──── */
+@keyframes shimmer-slide {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.shimmer-loading {
+  background: linear-gradient(
+    90deg,
+    var(--mantine-color-default) 0%,
+    var(--mantine-color-default-hover) 50%,
+    var(--mantine-color-default) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer-slide 1.8s ease-in-out infinite;
+}
+
+.mantine-Skeleton-root {
+  animation: shimmer-slide 1.5s ease-in-out infinite !important;
+  background: linear-gradient(
+    90deg,
+    var(--mantine-color-default) 0%,
+    var(--mantine-color-default-hover) 50%,
+    var(--mantine-color-default) 100%
+  ) !important;
+  background-size: 200% 100% !important;
 }
