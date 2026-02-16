@@ -153,7 +153,7 @@ export function ComponentsPage() {
     )
 
   return (
-    <Stack>
+    <Stack className="page-enter">
       <Title order={2}>Mantine component showcase</Title>
       <Text c="dimmed">
         A reference page for common controls, states, and composition patterns.

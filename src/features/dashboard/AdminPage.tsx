@@ -3,7 +3,7 @@ import { ShieldAlert } from 'lucide-react'
 
 export function AdminPage() {
   return (
-    <Stack>
+    <Stack className="page-enter">
       <Title order={2}>Admin area</Title>
       <Text c="dimmed">Only users with the admin role can access this route.</Text>
       <Alert icon={<ShieldAlert size={16} />} color="red" title="Restricted surface">

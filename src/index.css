@@ -1,3 +1,4 @@
+/* ──── Base ──── */
 html,
 body,
 #root {
@@ -5,18 +6,35 @@ body,
   min-height: 100%;
 }
 
+/* ──── Custom scrollbar ──── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--mantine-color-default-border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--mantine-color-dimmed);
+}
+
+/* ──── Focus ring ──── */
 :where(a, button, [role='button'], input, select, textarea, [tabindex]):focus-visible {
   outline: 2px solid var(--mantine-primary-color-filled);
   outline-offset: 2px;
 }
 
+/* ──── Skip link ──── */
 .skip-link {
   position: absolute;
   left: -9999px;
   top: 0.5rem;
   z-index: 1000;
 }
-
 .skip-link:focus-visible {
   left: 0.75rem;
   background: var(--mantine-color-body);
@@ -24,6 +42,248 @@ body,
   border-radius: 0.5rem;
 }
 
+/* ──── Animations ──── */
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+/* ──── Page content entrance ──── */
+.page-enter {
+  animation: fadeSlideUp 0.38s ease-out both;
+}
+
+/* ──── Card hover lift ──── */
+.mantine-Card-root {
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease !important;
+}
+.mantine-Card-root:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--mantine-shadow-md) !important;
+}
+
+/* ──── NavLink smooth transition ──── */
+.mantine-NavLink-root {
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease !important;
+}
+
+/* ──── Login page ──── */
+.login-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.login-hero {
+  flex: 0 0 50%;
+  position: relative;
+  background: linear-gradient(145deg, #0c1222 0%, #162032 50%, #0f172a 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 4rem;
+  overflow: hidden;
+}
+.login-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 20% 80%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(99, 102, 241, 0.06) 0%, transparent 50%);
+  pointer-events: none;
+}
+.login-hero-title {
+  font-size: clamp(2.5rem, 4.5vw, 3.75rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+  color: #f1f5f9;
+  margin: 0 0 1rem;
+  position: relative;
+  z-index: 1;
+}
+.login-hero-tagline {
+  font-size: 1.1rem;
+  line-height: 1.7;
+  color: #94a3b8;
+  max-width: 30ch;
+  position: relative;
+  z-index: 1;
+  margin: 0;
+}
+.login-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 2rem;
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  background: rgba(148, 163, 184, 0.06);
+  color: #94a3b8;
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  margin-bottom: 2rem;
+  position: relative;
+  z-index: 1;
+}
+
+/* Decorative accents */
+.login-accent {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--mantine-primary-color-filled, #6366f1);
+  pointer-events: none;
+}
+.login-accent-1 {
+  width: 380px;
+  height: 380px;
+  top: -100px;
+  right: -80px;
+  opacity: 0.06;
+  animation: float 12s ease-in-out infinite;
+}
+.login-accent-2 {
+  width: 200px;
+  height: 200px;
+  bottom: 8%;
+  left: -60px;
+  opacity: 0.05;
+  animation: float 10s ease-in-out infinite 3s;
+}
+.login-accent-3 {
+  width: 6px;
+  height: 120px;
+  border-radius: 3px;
+  bottom: 4rem;
+  right: 4rem;
+  opacity: 0.15;
+}
+
+.login-form-side {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: var(--mantine-color-body);
+}
+
+/* Staggered form entrance */
+.login-form-enter > * {
+  animation: fadeSlideUp 0.4s ease-out both;
+}
+.login-form-enter > *:nth-child(1) {
+  animation-delay: 0.06s;
+}
+.login-form-enter > *:nth-child(2) {
+  animation-delay: 0.12s;
+}
+.login-form-enter > *:nth-child(3) {
+  animation-delay: 0.18s;
+}
+.login-form-enter > *:nth-child(4) {
+  animation-delay: 0.24s;
+}
+.login-form-enter > *:nth-child(5) {
+  animation-delay: 0.3s;
+}
+.login-form-enter > *:nth-child(6) {
+  animation-delay: 0.36s;
+}
+.login-form-enter > *:nth-child(7) {
+  animation-delay: 0.42s;
+}
+.login-form-enter > *:nth-child(8) {
+  animation-delay: 0.48s;
+}
+
+@media (max-width: 768px) {
+  .login-hero {
+    display: none;
+  }
+  .login-form-side {
+    padding: 1.5rem;
+  }
+}
+
+/* ──── 404 page ──── */
+.not-found-code {
+  font-size: clamp(7rem, 18vw, 13rem);
+  font-weight: 800;
+  letter-spacing: -0.06em;
+  line-height: 1;
+  background: linear-gradient(
+    135deg,
+    var(--mantine-primary-color-filled) 0%,
+    var(--mantine-primary-color-light) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  user-select: none;
+  animation: scaleIn 0.5s ease-out;
+}
+
+/* ──── Dashboard stat card ──── */
+.stat-card {
+  position: relative;
+  overflow: hidden;
+}
+.stat-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 80px;
+  height: 80px;
+  border-radius: 0 0 0 80px;
+  background: var(--mantine-primary-color-light);
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+/* ──── Coachmark ──── */
 .coachmark-target {
   position: relative;
   z-index: 2;
@@ -36,10 +296,13 @@ body,
   right: 1rem;
   bottom: 1rem;
   z-index: 200;
-  width: min(340px, calc(100vw - 2rem));
-  padding: 0.75rem;
+  width: min(360px, calc(100vw - 2rem));
+  padding: 1rem;
   border: 1px solid var(--mantine-color-default-border);
   border-radius: 0.75rem;
   background: var(--mantine-color-body);
-  box-shadow: var(--mantine-shadow-md);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.06);
+  animation: fadeSlideUp 0.3s ease-out;
 }

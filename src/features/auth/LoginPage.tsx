@@ -2,7 +2,6 @@ import {
   Alert,
   Anchor,
   Button,
-  Paper,
   PasswordInput,
   Select,
   Stack,
@@ -10,6 +9,7 @@ import {
   TextInput,
   Title,
 } from '@mantine/core'
+import { Zap } from 'lucide-react'
 import { Controller, useForm } from 'react-hook-form'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/core/auth/AuthContext'
@@ -71,75 +71,100 @@ export function LoginPage() {
   })
 
   return (
-    <Paper maw={440} mx="auto" mt={80} withBorder shadow="sm" p="xl" radius="md">
-      <Stack>
-        <Title order={2}>Sign in</Title>
-        <Text size="sm" c="dimmed">
-          Demo mode is enabled for scaffolding. Password is <b>changeme</b>.
-        </Text>
-        <Alert color="blue" variant="light">
-          This is a starter authentication flow intended to be replaced by your API.
-        </Alert>
-        <form onSubmit={onSubmit}>
-          <Stack>
-            <TextInput
-              label="Username"
-              placeholder="alex"
-              {...register('username', { required: 'Username is required' })}
-              error={formState.errors.username?.message}
-            />
-            <PasswordInput
-              label="Password"
-              placeholder="changeme"
-              {...register('password', { required: 'Password is required' })}
-              error={formState.errors.password?.message}
-            />
-            <Controller
-              control={control}
-              name="role"
-              rules={{ required: 'Role is required' }}
-              render={({ field, fieldState }) => (
-                <Select
-                  label="Role"
-                  data={ROLE_OPTIONS}
-                  value={field.value}
-                  onChange={(value) => field.onChange((value ?? 'viewer') as Role)}
-                  error={fieldState.error?.message}
+    <div className="login-shell">
+      <div className="login-hero">
+        <div className="login-accent login-accent-1" />
+        <div className="login-accent login-accent-2" />
+        <div className="login-accent login-accent-3" />
+        <div className="login-hero-badge">
+          <Zap size={12} />
+          Production-ready skeleton
+        </div>
+        <h1 className="login-hero-title">ReactBase</h1>
+        <p className="login-hero-tagline">
+          Typed auth, RBAC routing, white-label theming, and a polished component
+          foundation — ready for your next product.
+        </p>
+      </div>
+
+      <div className="login-form-side">
+        <Stack maw={400} w="100%" className="login-form-enter">
+          <div>
+            <Title order={2} mb={4}>
+              Welcome back
+            </Title>
+            <Text size="sm" c="dimmed">
+              Sign in to continue. Demo password is <b>changeme</b>.
+            </Text>
+          </div>
+          <Alert color="blue" variant="light" radius="md">
+            Starter auth flow — replace with your API integration.
+          </Alert>
+          <form onSubmit={onSubmit}>
+            <Stack>
+              <TextInput
+                label="Username"
+                placeholder="alex"
+                size="md"
+                {...register('username', { required: 'Username is required' })}
+                error={formState.errors.username?.message}
+              />
+              <PasswordInput
+                label="Password"
+                placeholder="changeme"
+                size="md"
+                {...register('password', { required: 'Password is required' })}
+                error={formState.errors.password?.message}
+              />
+              <Controller
+                control={control}
+                name="role"
+                rules={{ required: 'Role is required' }}
+                render={({ field, fieldState }) => (
+                  <Select
+                    label="Role"
+                    data={ROLE_OPTIONS}
+                    size="md"
+                    value={field.value}
+                    onChange={(value) => field.onChange((value ?? 'viewer') as Role)}
+                    error={fieldState.error?.message}
+                  />
+                )}
+              />
+              {formState.errors.root && (
+                <ErrorStateAlert
+                  title="Authentication error"
+                  message={
+                    formState.errors.root.message ?? 'Unable to sign in right now.'
+                  }
+                  actionLabel='Use demo password "changeme"'
+                  onAction={() => {
+                    const message = formState.errors.root?.message
+                    if (!message) {
+                      return
+                    }
+
+                    addNotification({
+                      title: 'Tip',
+                      message: 'Use password "changeme" and submit again.',
+                      color: 'blue',
+                    })
+                  }}
                 />
               )}
-            />
-            {formState.errors.root && (
-              <ErrorStateAlert
-                title="Authentication error"
-                message={formState.errors.root.message ?? 'Unable to sign in right now.'}
-                actionLabel='Use demo password "changeme"'
-                onAction={() => {
-                  const message = formState.errors.root?.message
-                  if (!message) {
-                    return
-                  }
-
-                  addNotification({
-                    title: 'Tip',
-                    message: 'Use password "changeme" and submit again.',
-                    color: 'blue',
-                  })
-                }}
-              />
-            )}
-            <Button type="submit" loading={formState.isSubmitting}>
-              Sign in
-            </Button>
-          </Stack>
-        </form>
-        <Text size="sm" c="dimmed">
-          Need a backend? Connect the shared API client and update the auth context
-          implementation.
-        </Text>
-        <Anchor size="sm" href="/components">
-          Preview the component showcase
-        </Anchor>
-      </Stack>
-    </Paper>
+              <Button type="submit" size="md" loading={formState.isSubmitting}>
+                Sign in
+              </Button>
+            </Stack>
+          </form>
+          <Text size="xs" c="dimmed" ta="center">
+            Need a backend?{' '}
+            <Anchor size="xs" href="/components">
+              Preview the component showcase
+            </Anchor>
+          </Text>
+        </Stack>
+      </div>
+    </div>
   )
 }

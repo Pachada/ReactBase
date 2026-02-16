@@ -15,7 +15,7 @@ interface ThemeTokensContextValue {
 export const DEFAULT_THEME_TOKENS: ThemeTokens = {
   brandName: 'ReactBase',
   radius: 'md',
-  fontFamily: 'Inter, system-ui, sans-serif',
+  fontFamily: 'Outfit, system-ui, sans-serif',
 }
 
 export const ThemeTokensContext = createContext<ThemeTokensContextValue | null>(null)

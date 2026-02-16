@@ -208,6 +208,15 @@ export function AppShellLayout() {
         collapsed: { mobile: !opened },
       }}
       padding="md"
+      styles={{
+        header: {
+          backdropFilter: 'blur(12px)',
+          background: 'color-mix(in srgb, var(--mantine-color-body) 82%, transparent)',
+        },
+        navbar: {
+          transition: 'width 0.25s ease, min-width 0.25s ease',
+        },
+      }}
     >
       <Anchor href="#main-content" className="skip-link">
         Skip to main content
