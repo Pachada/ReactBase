@@ -306,3 +306,94 @@ body,
     0 2px 8px rgba(0, 0, 0, 0.06);
   animation: fadeSlideUp 0.3s ease-out;
 }
+
+/* ──── Mobile bottom navigation ──── */
+.mobile-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 150;
+  display: none;
+  background: color-mix(in srgb, var(--mantine-color-body) 95%, transparent);
+  backdrop-filter: blur(16px);
+  border-top: 1px solid var(--mantine-color-default-border);
+  padding: 0.5rem 0 calc(0.5rem + env(safe-area-inset-bottom));
+  box-shadow:
+    0 -2px 16px rgba(0, 0, 0, 0.04),
+    0 -1px 4px rgba(0, 0, 0, 0.02);
+}
+
+.mobile-bottom-nav-inner {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  max-width: 100%;
+  margin: 0 auto;
+  gap: 0.25rem;
+}
+
+.mobile-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  text-decoration: none;
+  color: var(--mantine-color-dimmed);
+  min-width: 60px;
+  flex: 1;
+  max-width: 90px;
+}
+
+.mobile-nav-item:hover {
+  background: var(--mantine-color-default-hover);
+}
+
+.mobile-nav-item.active {
+  color: var(--mantine-primary-color-filled);
+  background: var(--mantine-primary-color-light);
+}
+
+.mobile-nav-item svg {
+  width: 20px;
+  height: 20px;
+}
+
+.mobile-nav-item span {
+  font-size: 0.7rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .mobile-bottom-nav {
+    display: block;
+  }
+
+  /* Add padding to main content to prevent overlap */
+  .mantine-AppShell-main {
+    padding-bottom: calc(4rem + env(safe-area-inset-bottom)) !important;
+  }
+
+  /* Improve burger menu touch target */
+  .mantine-Burger-root {
+    width: 44px !important;
+    height: 44px !important;
+  }
+}
+
+/* ──── Mobile header improvements ──── */
+@media (max-width: 768px) {
+  .mantine-AppShell-header .mantine-Group-root {
+    gap: 0.5rem;
+  }
+
+  /* Better mobile header spacing */
+  .mantine-Title-root {
+    font-size: 1.1rem !important;
+  }
+}

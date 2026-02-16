@@ -29,6 +29,7 @@ import {
   HelpCircle,
   LayoutDashboard,
   Library,
+  LogOut,
   Moon,
   Palette,
   PanelLeftClose,
@@ -37,6 +38,7 @@ import {
   Settings2,
   ShieldCheck,
   Sun,
+  User,
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import {
@@ -394,13 +396,49 @@ export function AppShellLayout() {
               </Menu.Dropdown>
             </Menu>
             {auth.user && (
-              <Text size="sm" c="dimmed">
+              <Text size="sm" c="dimmed" visibleFrom="sm">
                 {auth.user.name} ({ROLE_LABEL[auth.user.role]})
               </Text>
             )}
-            <Button variant="light" onClick={auth.logout}>
-              Sign out
-            </Button>
+            <Menu shadow="md" width={220} position="bottom-end">
+              <Menu.Target>
+                <ActionIcon
+                  variant="subtle"
+                  aria-label="User menu"
+                  size="lg"
+                  hiddenFrom="sm"
+                >
+                  <User size={18} />
+                </ActionIcon>
+              </Menu.Target>
+              <Menu.Dropdown>
+                <Menu.Label>
+                  {auth.user?.name}
+                  <Text size="xs" c="dimmed">
+                    {auth.user && ROLE_LABEL[auth.user.role]}
+                  </Text>
+                </Menu.Label>
+                <Menu.Divider />
+                <Menu.Item
+                  leftSection={<LogOut size={16} />}
+                  onClick={auth.logout}
+                  color="red"
+                >
+                  Sign out
+                </Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
+            <Tooltip label="Sign out" withArrow visibleFrom="sm">
+              <ActionIcon
+                variant="light"
+                color="red"
+                onClick={auth.logout}
+                aria-label="Sign out"
+                visibleFrom="sm"
+              >
+                <LogOut size={18} />
+              </ActionIcon>
+            </Tooltip>
           </Group>
         </Group>
       </AppShell.Header>
@@ -578,6 +616,43 @@ export function AppShellLayout() {
           </Stack>
         </div>
       )}
+
+      {/* Mobile bottom navigation */}
+      <nav className="mobile-bottom-nav" aria-label="Mobile navigation">
+        <div className="mobile-bottom-nav-inner">
+          <RouterLink
+            to="/"
+            className={`mobile-nav-item ${isActiveLink('/') ? 'active' : ''}`}
+          >
+            <LayoutDashboard />
+            <span>Dashboard</span>
+          </RouterLink>
+          <RouterLink
+            to="/components"
+            className={`mobile-nav-item ${isActiveLink('/components') ? 'active' : ''}`}
+          >
+            <Library />
+            <span>Components</span>
+          </RouterLink>
+          {auth.hasRole(['admin']) && (
+            <RouterLink
+              to="/admin"
+              className={`mobile-nav-item ${isActiveLink('/admin') ? 'active' : ''}`}
+            >
+              <ShieldCheck />
+              <span>Admin</span>
+            </RouterLink>
+          )}
+          <button
+            className="mobile-nav-item"
+            onClick={tokensDrawerHandlers.open}
+            aria-label="Settings"
+          >
+            <Settings2 />
+            <span>Settings</span>
+          </button>
+        </div>
+      </nav>
     </AppShell>
   )
 }
