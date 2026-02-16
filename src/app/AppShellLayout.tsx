@@ -6,10 +6,12 @@ import {
   Burger,
   Button,
   ColorSwatch,
+  Drawer,
   Group,
   Indicator,
   Menu,
   NavLink,
+  Select,
   Stack,
   Text,
   TextInput,
@@ -18,20 +20,25 @@ import {
   useComputedColorScheme,
   useMantineColorScheme,
 } from '@mantine/core'
-import { useDocumentTitle, useDisclosure, useLocalStorage } from '@mantine/hooks'
+import { useDisclosure, useDocumentTitle, useLocalStorage } from '@mantine/hooks'
 import {
+  Bell,
   Check,
+  ChevronDown,
+  ChevronRight,
+  HelpCircle,
   LayoutDashboard,
   Library,
-  Bell,
   Moon,
   Palette,
   PanelLeftClose,
   PanelLeftOpen,
   Search,
+  Settings2,
   ShieldCheck,
   Sun,
 } from 'lucide-react'
+import { useMemo, useState } from 'react'
 import {
   Link as RouterLink,
   NavLink as RouterNavLink,
@@ -41,15 +48,11 @@ import {
 } from 'react-router-dom'
 import { useAuth } from '@/core/auth/AuthContext'
 import { ROLE_LABEL } from '@/core/auth/roles'
+import type { Role } from '@/core/auth/types'
 import { useNotificationCenter } from '@/core/notifications/NotificationCenterContext'
 import { usePrimaryColorSettings } from '@/core/theme/PrimaryColorContext'
 import { PRIMARY_COLOR_PRESETS } from '@/core/theme/color-presets'
-
-const links = [
-  { to: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/components', label: 'Components', icon: Library },
-  { to: '/admin', label: 'Admin', icon: ShieldCheck },
-]
+import { useThemeTokens } from '@/core/theme/ThemeTokensContext'
 
 type AppRouteHandle = {
   breadcrumb?: string
@@ -61,18 +64,87 @@ type AppRouteHandle = {
   }>
 }
 
+type NavItem = {
+  to: string
+  label: string
+  icon: typeof LayoutDashboard
+  roles?: Role[]
+}
+
+type NavGroup = {
+  id: string
+  label: string
+  items: NavItem[]
+}
+
+const navGroups: NavGroup[] = [
+  {
+    id: 'workspace',
+    label: 'Workspace',
+    items: [
+      { to: '/', label: 'Dashboard', icon: LayoutDashboard },
+      { to: '/components', label: 'Components', icon: Library },
+    ],
+  },
+  {
+    id: 'administration',
+    label: 'Administration',
+    items: [{ to: '/admin', label: 'Admin', icon: ShieldCheck, roles: ['admin'] }],
+  },
+]
+
+const coachmarkSteps = [
+  {
+    id: 'navigation',
+    title: 'Grouped navigation',
+    description:
+      'Use collapsible nav groups to keep routes organized and only show role-allowed pages.',
+    target: 'nav',
+  },
+  {
+    id: 'commands',
+    title: 'Global command area',
+    description:
+      'Use quick search and action slots for route-level commands and shortcuts.',
+    target: 'commands',
+  },
+  {
+    id: 'branding',
+    title: 'Theme token editor',
+    description:
+      'Open branding settings to customize brand name, radius, and font family per project.',
+    target: 'branding',
+  },
+] as const
+
 export function AppShellLayout() {
   const [opened, { toggle }] = useDisclosure()
+  const [tokensDrawerOpened, tokensDrawerHandlers] = useDisclosure()
   const [desktopCollapsed, setDesktopCollapsed] = useLocalStorage({
     key: 'reactbase.navbar.desktop-collapsed',
     defaultValue: false,
     getInitialValueInEffect: true,
   })
+  const [collapsedGroups, setCollapsedGroups] = useLocalStorage<Record<string, boolean>>({
+    key: 'reactbase.navbar.group-collapsed',
+    defaultValue: {
+      workspace: true,
+      administration: true,
+    },
+    getInitialValueInEffect: true,
+  })
+  const [onboardingCompleted, setOnboardingCompleted] = useLocalStorage({
+    key: 'reactbase.onboarding.completed',
+    defaultValue: false,
+    getInitialValueInEffect: true,
+  })
+  const [coachmarkStep, setCoachmarkStep] = useState(0)
   const { setColorScheme } = useMantineColorScheme()
   const computedColorScheme = useComputedColorScheme('light', {
     getInitialValueInEffect: true,
   })
   const { primaryColor, setPrimaryColor } = usePrimaryColorSettings()
+  const { tokens, updateTokens, resetTokens } = useThemeTokens()
   const {
     items: notificationItems,
     addNotification,
@@ -100,14 +172,38 @@ export function AppShellLayout() {
   const commandActions = currentHandle?.actions ?? []
   const isActiveLink = (to: string) =>
     to === '/' ? location.pathname === '/' : location.pathname.startsWith(to)
+  const currentCoachmark = !onboardingCompleted ? coachmarkSteps[coachmarkStep] : null
+  const coachmarkTargetClass = (target: string) =>
+    currentCoachmark?.target === target ? 'coachmark-target' : undefined
+  const visibleNavGroups = useMemo(
+    () =>
+      navGroups
+        .map((group) => ({
+          ...group,
+          items: group.items.filter((item) => !item.roles || auth.hasRole(item.roles)),
+        }))
+        .filter((group) => group.items.length > 0),
+    [auth],
+  )
 
-  useDocumentTitle(`${currentPageTitle} | ReactBase`)
+  useDocumentTitle(`${currentPageTitle} | ${tokens.brandName}`)
+
+  const toggleGroup = (groupId: string) =>
+    setCollapsedGroups((value) => ({
+      ...value,
+      [groupId]: !(value[groupId] ?? true),
+    }))
+
+  const completeCoachmarks = () => {
+    setOnboardingCompleted(true)
+    setCoachmarkStep(0)
+  }
 
   return (
     <AppShell
       header={{ height: 64 }}
       navbar={{
-        width: desktopCollapsed ? 80 : 260,
+        width: desktopCollapsed ? 80 : 280,
         breakpoint: 'sm',
         collapsed: { mobile: !opened },
       }}
@@ -136,12 +232,18 @@ export function AppShellLayout() {
                 <PanelLeftClose size={18} />
               )}
             </ActionIcon>
-            <Title order={4}>ReactBase</Title>
+            <Title order={4}>{tokens.brandName}</Title>
             <Text size="sm" c="dimmed" visibleFrom="sm">
               {currentPageTitle}
             </Text>
           </Group>
-          <Group flex={1} mx="md" visibleFrom="md" wrap="nowrap">
+          <Group
+            flex={1}
+            mx="md"
+            visibleFrom="md"
+            wrap="nowrap"
+            className={coachmarkTargetClass('commands')}
+          >
             <TextInput
               aria-label="Quick search"
               placeholder={commandPlaceholder}
@@ -166,7 +268,28 @@ export function AppShellLayout() {
               ))}
             </Group>
           </Group>
-          <Group>
+          <Group className={coachmarkTargetClass('branding')}>
+            <Tooltip label="Open onboarding coachmarks" withArrow>
+              <ActionIcon
+                variant="subtle"
+                aria-label="Restart onboarding tour"
+                onClick={() => {
+                  setOnboardingCompleted(false)
+                  setCoachmarkStep(0)
+                }}
+              >
+                <HelpCircle size={18} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label="Open theme token editor" withArrow>
+              <ActionIcon
+                variant="subtle"
+                aria-label="Open theme token editor"
+                onClick={tokensDrawerHandlers.open}
+              >
+                <Settings2 size={18} />
+              </ActionIcon>
+            </Tooltip>
             <Menu shadow="md" width={320} position="bottom-end">
               <Menu.Target>
                 <Indicator
@@ -274,47 +397,76 @@ export function AppShellLayout() {
       </AppShell.Header>
       <AppShell.Navbar p="md" component="nav" aria-label="Primary">
         <Stack gap="xs" align={desktopCollapsed ? 'center' : 'stretch'}>
-          {links.map((link) => (
-            <Tooltip
-              key={link.to}
-              label={link.label}
-              position="right"
-              disabled={!desktopCollapsed}
-              withArrow
-            >
-              <NavLink
-                label={link.label}
-                leftSection={<link.icon size={16} />}
-                component={RouterNavLink}
-                to={link.to}
-                active={isActiveLink(link.to)}
-                aria-label={link.label}
-                styles={
-                  desktopCollapsed
-                    ? {
-                        root: {
-                          width: 48,
-                          justifyContent: 'center',
-                          '&:focus-visible': {
-                            outline: '2px solid var(--mantine-primary-color-filled)',
-                            outlineOffset: '2px',
-                          },
-                        },
-                        label: { display: 'none' },
-                        section: { marginInlineEnd: 0 },
-                      }
-                    : {
-                        root: {
-                          '&:focus-visible': {
-                            outline: '2px solid var(--mantine-primary-color-filled)',
-                            outlineOffset: '2px',
-                          },
-                        },
-                      }
+          {visibleNavGroups.map((group) => {
+            const isGroupOpen = collapsedGroups[group.id] ?? true
+            return (
+              <Stack
+                key={group.id}
+                gap={4}
+                align={desktopCollapsed ? 'center' : 'stretch'}
+                className={
+                  group.id === 'workspace' ? coachmarkTargetClass('nav') : undefined
                 }
-              />
-            </Tooltip>
-          ))}
+              >
+                {!desktopCollapsed && (
+                  <Button
+                    variant="subtle"
+                    justify="space-between"
+                    onClick={() => toggleGroup(group.id)}
+                    rightSection={
+                      isGroupOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />
+                    }
+                  >
+                    {group.label}
+                  </Button>
+                )}
+                {(desktopCollapsed || isGroupOpen) &&
+                  group.items.map((link) => (
+                    <Tooltip
+                      key={link.to}
+                      label={link.label}
+                      position="right"
+                      disabled={!desktopCollapsed}
+                      withArrow
+                    >
+                      <NavLink
+                        label={link.label}
+                        leftSection={<link.icon size={16} />}
+                        component={RouterNavLink}
+                        to={link.to}
+                        active={isActiveLink(link.to)}
+                        aria-label={link.label}
+                        styles={
+                          desktopCollapsed
+                            ? {
+                                root: {
+                                  width: 48,
+                                  justifyContent: 'center',
+                                  '&:focus-visible': {
+                                    outline:
+                                      '2px solid var(--mantine-primary-color-filled)',
+                                    outlineOffset: '2px',
+                                  },
+                                },
+                                label: { display: 'none' },
+                                section: { marginInlineEnd: 0 },
+                              }
+                            : {
+                                root: {
+                                  '&:focus-visible': {
+                                    outline:
+                                      '2px solid var(--mantine-primary-color-filled)',
+                                    outlineOffset: '2px',
+                                  },
+                                },
+                              }
+                        }
+                      />
+                    </Tooltip>
+                  ))}
+              </Stack>
+            )
+          })}
         </Stack>
       </AppShell.Navbar>
       <AppShell.Main component="main" id="main-content" tabIndex={-1}>
@@ -335,6 +487,88 @@ export function AppShellLayout() {
         )}
         <Outlet />
       </AppShell.Main>
+
+      <Drawer
+        opened={tokensDrawerOpened}
+        onClose={tokensDrawerHandlers.close}
+        title="Theme token editor"
+        position="right"
+      >
+        <Stack>
+          <Text size="sm" c="dimmed">
+            Configure white-label tokens for this workspace.
+          </Text>
+          <TextInput
+            label="Brand name"
+            value={tokens.brandName}
+            onChange={(event) => updateTokens({ brandName: event.currentTarget.value })}
+          />
+          <Select
+            label="Radius scale"
+            value={tokens.radius}
+            onChange={(value) =>
+              updateTokens({
+                radius: (value as 'sm' | 'md' | 'lg' | 'xl') ?? tokens.radius,
+              })
+            }
+            data={[
+              { value: 'sm', label: 'Small' },
+              { value: 'md', label: 'Medium' },
+              { value: 'lg', label: 'Large' },
+              { value: 'xl', label: 'Extra large' },
+            ]}
+          />
+          <TextInput
+            label="Font family"
+            value={tokens.fontFamily}
+            onChange={(event) => updateTokens({ fontFamily: event.currentTarget.value })}
+          />
+          <Group justify="space-between">
+            <Button variant="subtle" onClick={resetTokens}>
+              Reset defaults
+            </Button>
+            <Button onClick={tokensDrawerHandlers.close}>Done</Button>
+          </Group>
+        </Stack>
+      </Drawer>
+
+      {currentCoachmark && (
+        <div className="coachmark-panel" role="dialog" aria-live="polite">
+          <Stack gap={6}>
+            <Text size="sm" fw={600}>
+              {currentCoachmark.title}
+            </Text>
+            <Text size="sm" c="dimmed">
+              {currentCoachmark.description}
+            </Text>
+            <Group justify="space-between" mt={4}>
+              <Button
+                size="compact-xs"
+                variant="subtle"
+                onClick={() => setCoachmarkStep((value) => Math.max(0, value - 1))}
+                disabled={coachmarkStep === 0}
+              >
+                Back
+              </Button>
+              <Group gap={6}>
+                <Button size="compact-xs" variant="default" onClick={completeCoachmarks}>
+                  Skip
+                </Button>
+                <Button
+                  size="compact-xs"
+                  onClick={() =>
+                    coachmarkStep >= coachmarkSteps.length - 1
+                      ? completeCoachmarks()
+                      : setCoachmarkStep((value) => value + 1)
+                  }
+                >
+                  {coachmarkStep >= coachmarkSteps.length - 1 ? 'Finish' : 'Next'}
+                </Button>
+              </Group>
+            </Group>
+          </Stack>
+        </div>
+      )}
     </AppShell>
   )
 }

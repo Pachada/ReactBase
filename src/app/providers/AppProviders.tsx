@@ -10,6 +10,11 @@ import { AuthProvider, useAuth } from '@/core/auth/AuthContext'
 import { NotificationCenterProvider } from '@/core/notifications/NotificationCenterContext'
 import { PrimaryColorContext } from '@/core/theme/PrimaryColorContext'
 import {
+  DEFAULT_THEME_TOKENS,
+  ThemeTokensContext,
+  type ThemeTokens,
+} from '@/core/theme/ThemeTokensContext'
+import {
   CUSTOM_THEME_COLORS,
   DEFAULT_PRIMARY_COLOR_PRESET,
   isPrimaryColorPreset,
@@ -26,6 +31,11 @@ export function AppProviders({ children }: PropsWithChildren) {
 
 function ThemedProviders({ children }: PropsWithChildren) {
   const auth = useAuth()
+  const [tokens, setTokens] = useLocalStorage<ThemeTokens>({
+    key: `reactbase.theme-tokens.${auth.user?.email ?? 'anonymous'}`,
+    defaultValue: DEFAULT_THEME_TOKENS,
+    getInitialValueInEffect: true,
+  })
   const [storedPrimaryColor, setStoredPrimaryColor] = useLocalStorage({
     key: `reactbase.primary-color.${auth.user?.email ?? 'anonymous'}`,
     defaultValue: DEFAULT_PRIMARY_COLOR_PRESET,
@@ -47,9 +57,10 @@ function ThemedProviders({ children }: PropsWithChildren) {
       createTheme({
         colors: CUSTOM_THEME_COLORS,
         primaryColor,
-        defaultRadius: 'md',
+        defaultRadius: tokens.radius,
+        fontFamily: tokens.fontFamily,
       }),
-    [primaryColor],
+    [primaryColor, tokens.fontFamily, tokens.radius],
   )
 
   const primaryColorContextValue = useMemo(
@@ -59,19 +70,30 @@ function ThemedProviders({ children }: PropsWithChildren) {
     }),
     [primaryColor, setStoredPrimaryColor],
   )
+  const themeTokensContextValue = useMemo(
+    () => ({
+      tokens,
+      updateTokens: (nextTokens: Partial<ThemeTokens>) =>
+        setTokens((previousTokens) => ({ ...previousTokens, ...nextTokens })),
+      resetTokens: () => setTokens(DEFAULT_THEME_TOKENS),
+    }),
+    [setTokens, tokens],
+  )
 
   return (
-    <PrimaryColorContext.Provider value={primaryColorContextValue}>
-      <MantineProvider
-        theme={theme}
-        defaultColorScheme="auto"
-        colorSchemeManager={colorSchemeManager}
-      >
-        <NotificationCenterProvider>
-          <Notifications position="top-right" />
-          {children}
-        </NotificationCenterProvider>
-      </MantineProvider>
-    </PrimaryColorContext.Provider>
+    <ThemeTokensContext.Provider value={themeTokensContextValue}>
+      <PrimaryColorContext.Provider value={primaryColorContextValue}>
+        <MantineProvider
+          theme={theme}
+          defaultColorScheme="auto"
+          colorSchemeManager={colorSchemeManager}
+        >
+          <NotificationCenterProvider>
+            <Notifications position="top-right" />
+            {children}
+          </NotificationCenterProvider>
+        </MantineProvider>
+      </PrimaryColorContext.Provider>
+    </ThemeTokensContext.Provider>
   )
 }
