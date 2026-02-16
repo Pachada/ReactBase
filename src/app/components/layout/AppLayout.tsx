@@ -1,4 +1,4 @@
-import { Home } from 'lucide-react';
+import { Home, LayoutGrid } from 'lucide-react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { Badge } from '@/app/components/ui/badge';
 import {
@@ -57,6 +57,20 @@ export function AppLayout() {
           >
             <Home className="h-4 w-4" />
             Home
+          </NavLink>
+          <NavLink
+            to="/components"
+            className={({ isActive }) =>
+              [
+                'inline-flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-medium',
+                isActive
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground',
+              ].join(' ')
+            }
+          >
+            <LayoutGrid className="h-4 w-4" />
+            Components
           </NavLink>
         </div>
       </nav>

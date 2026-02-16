@@ -5,6 +5,7 @@ import { Toaster } from '@/app/components/ui/sonner';
 import { AppStateProvider } from '@/app/contexts/AppStateContext';
 import { AuthProvider } from '@/app/contexts/AuthContext';
 import { HomePage } from '@/app/pages/home';
+import { ComponentsShowcasePage } from '@/app/pages/showcase';
 import '@/styles/index.css';
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
             <Route element={<AppLayout />}>
               <Route index element={<Navigate replace to="/home" />} />
               <Route path="/home" element={<HomePage />} />
+              <Route path="/components" element={<ComponentsShowcasePage />} />
               <Route path="*" element={<Navigate replace to="/home" />} />
             </Route>
           </Routes>
