@@ -12,6 +12,10 @@ import type { AuthState, LoginCredentials, Role } from '@/core/auth/types'
 
 const DEMO_PASSWORD = 'changeme'
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000 // 30 minutes
+const generateUserId = () =>
+  typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID()
+    : `user-${Date.now()}-${Math.random().toString(36).slice(2)}`
 
 interface AuthContextValue extends AuthState {
   login: (credentials: LoginCredentials, rememberMe?: boolean) => Promise<void>
@@ -46,7 +50,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
     const nextState: AuthState = {
       user: {
-        id: crypto.randomUUID(),
+        id: generateUserId(),
         name: credentials.username,
         email: `${credentials.username.toLowerCase()}@example.com`,
         role: credentials.role,

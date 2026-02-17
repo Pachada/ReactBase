@@ -15,9 +15,12 @@ Object.defineProperty(window, 'matchMedia', {
 })
 
 class ResizeObserverMock {
+  constructor(callback: ResizeObserverCallback) {
+    void callback
+  }
   observe() {}
   unobserve() {}
   disconnect() {}
 }
 
-globalThis.ResizeObserver = ResizeObserverMock
+globalThis.ResizeObserver = ResizeObserverMock as unknown as typeof ResizeObserver
