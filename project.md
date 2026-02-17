@@ -130,7 +130,7 @@ Model:
 
 Persistence key for collapsed group state:
 
-- `reactbase.navbar.group-collapsed`
+- `reactbase.navbar.group-open`
 
 Persistence key for desktop compact nav:
 
