@@ -9,25 +9,25 @@ import {
   TextInput,
   Title,
 } from '@mantine/core'
-import { useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
-import { useNotificationCenter } from '@/core/notifications/NotificationCenterContext'
 import { ROLE_OPTIONS } from '@/core/auth/roles'
+import { useNotificationCenter } from '@/core/notifications/NotificationCenterContext'
 import { ErrorStateAlert } from '@/core/ui/ErrorStateAlert'
-import type { Role } from '@/core/auth/types'
+import {
+  fetchProfile,
+  updateProfile,
+  type Profile,
+} from '@/features/dashboard/profile-api'
 
-interface ProfileFormValues {
-  fullName: string
-  email: string
-  role: Role
-}
+const PROFILE_QUERY_KEY = ['profile']
 
 export function ProfileFormCard() {
   const { addNotification } = useNotificationCenter()
-  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'success' | 'error'>(
-    'idle',
-  )
-  const { register, control, handleSubmit, formState } = useForm<ProfileFormValues>({
+  const queryClient = useQueryClient()
+  const [saveState, setSaveState] = useState<'idle' | 'success' | 'error'>('idle')
+  const { register, control, handleSubmit, formState, reset } = useForm<Profile>({
     defaultValues: {
       fullName: '',
       email: '',
@@ -36,20 +36,90 @@ export function ProfileFormCard() {
     mode: 'onBlur',
   })
 
-  const onSubmit = handleSubmit(async () => {
-    setSaveState('saving')
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 500))
+  const profileQuery = useQuery({
+    queryKey: PROFILE_QUERY_KEY,
+    queryFn: fetchProfile,
+  })
+
+  useEffect(() => {
+    if (profileQuery.data) {
+      reset(profileQuery.data)
+    }
+  }, [profileQuery.data, reset])
+
+  const saveProfileMutation = useMutation({
+    mutationFn: updateProfile,
+    onMutate: async (nextProfile) => {
+      setSaveState('idle')
+      await queryClient.cancelQueries({ queryKey: PROFILE_QUERY_KEY })
+      const previousProfile = queryClient.getQueryData<Profile>(PROFILE_QUERY_KEY)
+      queryClient.setQueryData(PROFILE_QUERY_KEY, nextProfile)
+      return { previousProfile }
+    },
+    onError: (error, _nextProfile, context) => {
+      if (context?.previousProfile) {
+        queryClient.setQueryData(PROFILE_QUERY_KEY, context.previousProfile)
+        reset(context.previousProfile)
+      }
+      setSaveState('error')
+      addNotification({
+        title: 'Profile update failed',
+        message:
+          error instanceof Error
+            ? error.message
+            : 'We could not save your profile right now.',
+        color: 'red',
+      })
+    },
+    onSuccess: (serverProfile) => {
+      queryClient.setQueryData(PROFILE_QUERY_KEY, serverProfile)
+      reset(serverProfile)
       setSaveState('success')
       addNotification({
         title: 'Profile saved',
-        message: 'Profile changes were saved locally.',
+        message: 'Profile changes were synced successfully.',
         color: 'green',
       })
-    } catch {
-      setSaveState('error')
-    }
+    },
+    onSettled: async () => {
+      await queryClient.invalidateQueries({ queryKey: PROFILE_QUERY_KEY })
+    },
   })
+
+  const onSubmit = handleSubmit(async (values) => {
+    await saveProfileMutation.mutateAsync(values)
+  })
+
+  if (profileQuery.isLoading) {
+    return (
+      <Card withBorder shadow="xs" radius="md">
+        <Stack>
+          <Skeleton h={18} w="35%" radius="sm" />
+          <Skeleton h={74} radius="md" />
+          <Skeleton h={74} radius="md" />
+          <Skeleton h={74} radius="md" />
+          <Group justify="flex-end">
+            <Skeleton h={36} w={120} radius="xl" />
+          </Group>
+        </Stack>
+      </Card>
+    )
+  }
+
+  if (profileQuery.isError) {
+    return (
+      <Card withBorder shadow="xs" radius="md">
+        <ErrorStateAlert
+          title="Profile data unavailable"
+          message="We could not load profile details."
+          actionLabel="Retry"
+          onAction={() => {
+            void profileQuery.refetch()
+          }}
+        />
+      </Card>
+    )
+  }
 
   return (
     <Card withBorder shadow="xs" radius="md">
@@ -65,6 +135,7 @@ export function ProfileFormCard() {
           <TextInput
             label="Email"
             placeholder="jane@example.com"
+            description='Tip: use an email containing "fail" to simulate rollback.'
             {...register('email', {
               required: 'Email is required',
               pattern: {
@@ -83,26 +154,29 @@ export function ProfileFormCard() {
                 label="Role"
                 data={ROLE_OPTIONS}
                 value={field.value}
-                onChange={(value) => field.onChange((value ?? 'viewer') as Role)}
+                onChange={(value) =>
+                  field.onChange((value ?? 'viewer') as Profile['role'])
+                }
                 error={fieldState.error?.message}
               />
             )}
           />
           <Group justify="flex-end">
-            <Button type="submit" loading={saveState === 'saving'}>
+            <Button type="submit" loading={saveProfileMutation.isPending}>
               Save profile
             </Button>
           </Group>
-          {saveState === 'saving' && <Skeleton h={52} radius="md" />}
+          {saveProfileMutation.isPending && <Skeleton h={52} radius="md" />}
           {saveState === 'success' && (
             <Alert color="green" variant="light">
-              Changes saved. You can keep editing while data sync completes.
+              Changes saved. Optimistic UI applied instantly and verified with server
+              sync.
             </Alert>
           )}
           {saveState === 'error' && (
             <ErrorStateAlert
               title="Profile update failed"
-              message="We could not save your profile right now."
+              message="Optimistic changes were rolled back to the last saved profile."
               actionLabel="Retry"
               onAction={() => {
                 setSaveState('idle')

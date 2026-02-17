@@ -5,7 +5,8 @@ import {
 } from '@mantine/core'
 import { useLocalStorage } from '@mantine/hooks'
 import { Notifications } from '@mantine/notifications'
-import { useMemo, type PropsWithChildren } from 'react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { useMemo, useState, type PropsWithChildren } from 'react'
 import { AuthProvider, useAuth } from '@/core/auth/AuthContext'
 import { SessionTimeoutWarning } from '@/core/auth/SessionTimeoutWarning'
 import { NotificationCenterProvider } from '@/core/notifications/NotificationCenterContext'
@@ -32,6 +33,18 @@ export function AppProviders({ children }: PropsWithChildren) {
 
 function ThemedProviders({ children }: PropsWithChildren) {
   const auth = useAuth()
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: 15_000,
+            refetchOnWindowFocus: false,
+            retry: 1,
+          },
+        },
+      }),
+  )
   const [tokens, setTokens] = useLocalStorage<ThemeTokens>({
     key: `reactbase.theme-tokens.${auth.user?.email ?? 'anonymous'}`,
     defaultValue: DEFAULT_THEME_TOKENS,
@@ -89,11 +102,13 @@ function ThemedProviders({ children }: PropsWithChildren) {
           defaultColorScheme="auto"
           colorSchemeManager={colorSchemeManager}
         >
-          <SessionTimeoutWarning />
-          <NotificationCenterProvider>
-            <Notifications position={tokens.notificationPosition} />
-            {children}
-          </NotificationCenterProvider>
+          <QueryClientProvider client={queryClient}>
+            <SessionTimeoutWarning />
+            <NotificationCenterProvider>
+              <Notifications position={tokens.notificationPosition} />
+              {children}
+            </NotificationCenterProvider>
+          </QueryClientProvider>
         </MantineProvider>
       </PrimaryColorContext.Provider>
     </ThemeTokensContext.Provider>
