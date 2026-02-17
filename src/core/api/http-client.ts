@@ -33,7 +33,7 @@ export class HttpClient {
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       method: options.method ?? 'GET',
       headers: requestHeaders,
-      body: options.body ? JSON.stringify(options.body) : undefined,
+      body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
     })
 
     if (!response.ok) {

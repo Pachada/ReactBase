@@ -1,4 +1,5 @@
 import { Stack, Text, Title } from '@mantine/core'
+import type { ReactNode } from 'react'
 import type { LucideIcon } from 'lucide-react'
 
 interface EmptyStateProps {
@@ -6,7 +7,7 @@ interface EmptyStateProps {
   title: string
   description: string
   illustration?: 'no-data' | 'no-results' | 'no-notifications'
-  action?: React.ReactNode
+  action?: ReactNode
 }
 
 function NoDataIllustration() {

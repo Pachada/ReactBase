@@ -13,7 +13,13 @@ export function loadAuthState(): AuthState {
     return { user: null, token: null, status: 'anonymous' }
   }
 
-  const parsedState = JSON.parse(rawState) as AuthState
+  let parsedState: AuthState
+  try {
+    parsedState = JSON.parse(rawState) as AuthState
+  } catch {
+    storage.removeItem(AUTH_STORAGE_KEY)
+    return { user: null, token: null, status: 'anonymous' }
+  }
   if (!parsedState.user || !parsedState.token) {
     return { user: null, token: null, status: 'anonymous' }
   }

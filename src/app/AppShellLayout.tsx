@@ -257,15 +257,14 @@ export function AppShellLayout() {
                 <PanelLeftClose size={18} />
               )}
             </ActionIcon>
-            <Title
-              order={4}
+            <Anchor
               component={RouterLink}
               to="/"
               style={{ textDecoration: 'none', color: 'inherit' }}
               aria-label="Go to dashboard"
             >
-              {tokens.brandName}
-            </Title>
+              <Title order={4}>{tokens.brandName}</Title>
+            </Anchor>
             <Text size="sm" c="dimmed" visibleFrom="sm">
               {currentPageTitle}
             </Text>
@@ -684,14 +683,16 @@ export function AppShellLayout() {
               <span>Admin</span>
             </RouterLink>
           )}
-          <button
-            className="mobile-nav-item"
-            onClick={tokensDrawerHandlers.open}
-            aria-label="Settings"
-          >
-            <Settings2 />
-            <span>Settings</span>
-          </button>
+          {themeTokenEditorEnabled && (
+            <button
+              className="mobile-nav-item"
+              onClick={tokensDrawerHandlers.open}
+              aria-label="Settings"
+            >
+              <Settings2 />
+              <span>Settings</span>
+            </button>
+          )}
         </div>
       </nav>
 
