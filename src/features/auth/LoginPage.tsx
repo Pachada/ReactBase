@@ -181,7 +181,7 @@ export function LoginPage() {
               Sign up
             </Anchor>
             {' · '}
-            <Anchor size="xs" href="/components">
+            <Anchor component={Link} to="/components" size="xs">
               Preview components
             </Anchor>
           </Text>

@@ -131,8 +131,8 @@ export function AppShellLayout() {
     defaultValue: false,
     getInitialValueInEffect: true,
   })
-  const [collapsedGroups, setCollapsedGroups] = useLocalStorage<Record<string, boolean>>({
-    key: 'reactbase.navbar.group-collapsed',
+  const [openGroups, setOpenGroups] = useLocalStorage<Record<string, boolean>>({
+    key: 'reactbase.navbar.group-open',
     defaultValue: {
       workspace: true,
       administration: true,
@@ -205,7 +205,7 @@ export function AppShellLayout() {
   useDocumentTitle(`${currentPageTitle} | ${tokens.brandName}`)
 
   const toggleGroup = (groupId: string) =>
-    setCollapsedGroups((value) => ({
+    setOpenGroups((value) => ({
       ...value,
       [groupId]: !(value[groupId] ?? true),
     }))
@@ -468,7 +468,7 @@ export function AppShellLayout() {
       <AppShell.Navbar p="md" component="nav" aria-label="Primary">
         <Stack gap="xs" align={desktopCollapsed ? 'center' : 'stretch'}>
           {visibleNavGroups.map((group) => {
-            const isGroupOpen = collapsedGroups[group.id] ?? true
+            const isGroupOpen = openGroups[group.id] ?? true
             return (
               <Stack
                 key={group.id}
@@ -685,6 +685,7 @@ export function AppShellLayout() {
           )}
           {themeTokenEditorEnabled && (
             <button
+              type="button"
               className="mobile-nav-item"
               onClick={tokensDrawerHandlers.open}
               aria-label="Settings"

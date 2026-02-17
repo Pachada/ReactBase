@@ -89,7 +89,16 @@ export function ForgotPasswordPage() {
 
             <Alert color="blue" variant="light" radius="md" w="100%">
               Didn&apos;t receive the email? Check your spam folder or{' '}
-              <Anchor onClick={() => setIsSubmitted(false)}>try again</Anchor>.
+              <Button
+                variant="subtle"
+                size="compact-xs"
+                onClick={() => setIsSubmitted(false)}
+                type="button"
+                px={0}
+              >
+                try again
+              </Button>
+              .
             </Alert>
 
             <Button
