@@ -51,6 +51,7 @@ import {
 import { useAuth } from '@/core/auth/AuthContext'
 import { ROLE_LABEL } from '@/core/auth/roles'
 import type { Role } from '@/core/auth/types'
+import { env } from '@/core/config/env'
 import { useNotificationCenter } from '@/core/notifications/NotificationCenterContext'
 import { usePrimaryColorSettings } from '@/core/theme/PrimaryColorContext'
 import { PRIMARY_COLOR_PRESETS } from '@/core/theme/color-presets'
@@ -122,6 +123,7 @@ const coachmarkSteps = [
 ] as const
 
 export function AppShellLayout() {
+  const themeTokenEditorEnabled = env.themeTokenEditorEnabled
   const [opened, { toggle }] = useDisclosure()
   const [tokensDrawerOpened, tokensDrawerHandlers] = useDisclosure()
   const [desktopCollapsed, setDesktopCollapsed] = useLocalStorage({
@@ -176,7 +178,17 @@ export function AppShellLayout() {
   const commandActions = currentHandle?.actions ?? []
   const isActiveLink = (to: string) =>
     to === '/' ? location.pathname === '/' : location.pathname.startsWith(to)
-  const currentCoachmark = !onboardingCompleted ? coachmarkSteps[coachmarkStep] : null
+  const activeCoachmarkSteps = useMemo(
+    () =>
+      themeTokenEditorEnabled
+        ? coachmarkSteps
+        : coachmarkSteps.filter((step) => step.target !== 'branding'),
+    [themeTokenEditorEnabled],
+  )
+  const currentCoachmark =
+    !onboardingCompleted && coachmarkStep < activeCoachmarkSteps.length
+      ? activeCoachmarkSteps[coachmarkStep]
+      : null
   const coachmarkTargetClass = (target: string) =>
     currentCoachmark?.target === target ? 'coachmark-target' : undefined
   const visibleNavGroups = useMemo(
@@ -245,7 +257,15 @@ export function AppShellLayout() {
                 <PanelLeftClose size={18} />
               )}
             </ActionIcon>
-            <Title order={4}>{tokens.brandName}</Title>
+            <Title
+              order={4}
+              component={RouterLink}
+              to="/"
+              style={{ textDecoration: 'none', color: 'inherit' }}
+              aria-label="Go to dashboard"
+            >
+              {tokens.brandName}
+            </Title>
             <Text size="sm" c="dimmed" visibleFrom="sm">
               {currentPageTitle}
             </Text>
@@ -294,15 +314,17 @@ export function AppShellLayout() {
                 <HelpCircle size={18} />
               </ActionIcon>
             </Tooltip>
-            <Tooltip label="Open theme token editor" withArrow>
-              <ActionIcon
-                variant="subtle"
-                aria-label="Open theme token editor"
-                onClick={tokensDrawerHandlers.open}
-              >
-                <Settings2 size={18} />
-              </ActionIcon>
-            </Tooltip>
+            {themeTokenEditorEnabled && (
+              <Tooltip label="Open theme token editor" withArrow>
+                <ActionIcon
+                  variant="subtle"
+                  aria-label="Open theme token editor"
+                  onClick={tokensDrawerHandlers.open}
+                >
+                  <Settings2 size={18} />
+                </ActionIcon>
+              </Tooltip>
+            )}
             <Menu shadow="md" width={320} position="bottom-end">
               <Menu.Target>
                 <Indicator
@@ -537,64 +559,66 @@ export function AppShellLayout() {
         <Outlet />
       </AppShell.Main>
 
-      <Drawer
-        opened={tokensDrawerOpened}
-        onClose={tokensDrawerHandlers.close}
-        title="Theme token editor"
-        position="right"
-      >
-        <Stack>
-          <Text size="sm" c="dimmed">
-            Configure white-label tokens for this workspace.
-          </Text>
-          <TextInput
-            label="Brand name"
-            value={tokens.brandName}
-            onChange={(event) => updateTokens({ brandName: event.currentTarget.value })}
-          />
-          <Select
-            label="Radius scale"
-            value={tokens.radius}
-            onChange={(value) =>
-              updateTokens({
-                radius: (value as 'sm' | 'md' | 'lg' | 'xl') ?? tokens.radius,
-              })
-            }
-            data={[
-              { value: 'sm', label: 'Small' },
-              { value: 'md', label: 'Medium' },
-              { value: 'lg', label: 'Large' },
-              { value: 'xl', label: 'Extra large' },
-            ]}
-          />
-          <FontPicker
-            value={tokens.fontFamily}
-            onChange={(value) => updateTokens({ fontFamily: value })}
-          />
-          <Select
-            label="Notification position"
-            value={tokens.notificationPosition}
-            onChange={(value) =>
-              updateTokens({
-                notificationPosition:
-                  (value as 'top-right' | 'bottom-right' | 'bottom-center') ??
-                  tokens.notificationPosition,
-              })
-            }
-            data={[
-              { value: 'top-right', label: 'Top Right' },
-              { value: 'bottom-right', label: 'Bottom Right' },
-              { value: 'bottom-center', label: 'Bottom Center' },
-            ]}
-          />
-          <Group justify="space-between">
-            <Button variant="subtle" onClick={resetTokens}>
-              Reset defaults
-            </Button>
-            <Button onClick={tokensDrawerHandlers.close}>Done</Button>
-          </Group>
-        </Stack>
-      </Drawer>
+      {themeTokenEditorEnabled && (
+        <Drawer
+          opened={tokensDrawerOpened}
+          onClose={tokensDrawerHandlers.close}
+          title="Theme token editor"
+          position="right"
+        >
+          <Stack>
+            <Text size="sm" c="dimmed">
+              Configure white-label tokens for this workspace.
+            </Text>
+            <TextInput
+              label="Brand name"
+              value={tokens.brandName}
+              onChange={(event) => updateTokens({ brandName: event.currentTarget.value })}
+            />
+            <Select
+              label="Radius scale"
+              value={tokens.radius}
+              onChange={(value) =>
+                updateTokens({
+                  radius: (value as 'sm' | 'md' | 'lg' | 'xl') ?? tokens.radius,
+                })
+              }
+              data={[
+                { value: 'sm', label: 'Small' },
+                { value: 'md', label: 'Medium' },
+                { value: 'lg', label: 'Large' },
+                { value: 'xl', label: 'Extra large' },
+              ]}
+            />
+            <FontPicker
+              value={tokens.fontFamily}
+              onChange={(value) => updateTokens({ fontFamily: value })}
+            />
+            <Select
+              label="Notification position"
+              value={tokens.notificationPosition}
+              onChange={(value) =>
+                updateTokens({
+                  notificationPosition:
+                    (value as 'top-right' | 'bottom-right' | 'bottom-center') ??
+                    tokens.notificationPosition,
+                })
+              }
+              data={[
+                { value: 'top-right', label: 'Top Right' },
+                { value: 'bottom-right', label: 'Bottom Right' },
+                { value: 'bottom-center', label: 'Bottom Center' },
+              ]}
+            />
+            <Group justify="space-between">
+              <Button variant="subtle" onClick={resetTokens}>
+                Reset defaults
+              </Button>
+              <Button onClick={tokensDrawerHandlers.close}>Done</Button>
+            </Group>
+          </Stack>
+        </Drawer>
+      )}
 
       {currentCoachmark && (
         <div className="coachmark-panel" role="dialog" aria-live="polite">
@@ -621,12 +645,12 @@ export function AppShellLayout() {
                 <Button
                   size="compact-xs"
                   onClick={() =>
-                    coachmarkStep >= coachmarkSteps.length - 1
+                    coachmarkStep >= activeCoachmarkSteps.length - 1
                       ? completeCoachmarks()
                       : setCoachmarkStep((value) => value + 1)
                   }
                 >
-                  {coachmarkStep >= coachmarkSteps.length - 1 ? 'Finish' : 'Next'}
+                  {coachmarkStep >= activeCoachmarkSteps.length - 1 ? 'Finish' : 'Next'}
                 </Button>
               </Group>
             </Group>
