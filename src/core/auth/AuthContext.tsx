@@ -7,7 +7,7 @@ import {
   useState,
   type PropsWithChildren,
 } from 'react'
-import { loadAuthState, saveAuthState } from '@/core/auth/auth-storage'
+import { AUTH_REMEMBER_KEY, loadAuthState, saveAuthState } from '@/core/auth/auth-storage'
 import type { AuthState, LoginCredentials, Role } from '@/core/auth/types'
 
 const DEMO_PASSWORD = 'changeme'
@@ -83,7 +83,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
   // Initialize session timer on mount if logged in with session storage
   useEffect(() => {
     if (authState.status === 'authenticated') {
-      const rememberMe = window.localStorage.getItem('reactbase.auth.remember') === 'true'
+      const rememberMe = window.localStorage.getItem(AUTH_REMEMBER_KEY) === 'true'
       if (!rememberMe && !sessionExpiresAt) {
         // Use setTimeout to avoid setting state directly in effect
         const timer = setTimeout(() => {

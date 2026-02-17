@@ -11,6 +11,7 @@ import {
   useMantineColorScheme,
 } from '@mantine/core'
 import { Zap } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { Link, useNavigate } from 'react-router-dom'
 import { useNotificationCenter } from '@/core/notifications/NotificationCenterContext'
@@ -27,6 +28,7 @@ interface SignUpFormValues {
 
 export function SignUpPage() {
   const navigate = useNavigate()
+  const [shouldRedirectToLogin, setShouldRedirectToLogin] = useState(false)
   const { addNotification } = useNotificationCenter()
   const { colorScheme } = useMantineColorScheme()
   const { register, control, handleSubmit, formState, setError } =
@@ -40,6 +42,18 @@ export function SignUpPage() {
       },
       mode: 'onBlur',
     })
+
+  useEffect(() => {
+    if (!shouldRedirectToLogin) {
+      return
+    }
+
+    const timer = setTimeout(() => {
+      navigate('/login', { replace: true })
+    }, 1500)
+
+    return () => clearTimeout(timer)
+  }, [navigate, shouldRedirectToLogin])
 
   const onSubmit = handleSubmit(async (values) => {
     // Check password match
@@ -59,10 +73,7 @@ export function SignUpPage() {
         color: 'green',
       })
 
-      // Redirect to login after a short delay
-      setTimeout(() => {
-        navigate('/login', { replace: true })
-      }, 1500)
+      setShouldRedirectToLogin(true)
     } catch (error) {
       const message =
         error instanceof Error

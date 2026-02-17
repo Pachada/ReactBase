@@ -12,8 +12,14 @@ const parseBooleanEnv = (value: string | undefined, fallback: boolean) => {
   return value.toLowerCase() === 'true'
 }
 
+const apiBaseUrl = runtimeEnv.VITE_API_BASE_URL ?? ''
+
+if (import.meta.env.PROD && apiBaseUrl.length > 0 && apiBaseUrl.startsWith('http://')) {
+  throw new Error('VITE_API_BASE_URL must use HTTPS in production.')
+}
+
 export const env = {
-  apiBaseUrl: runtimeEnv.VITE_API_BASE_URL ?? '',
+  apiBaseUrl,
   themeTokenEditorEnabled: parseBooleanEnv(
     runtimeEnv.VITE_ENABLE_THEME_TOKEN_EDITOR,
     true,

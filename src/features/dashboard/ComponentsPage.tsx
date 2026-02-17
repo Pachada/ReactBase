@@ -20,7 +20,7 @@ import {
   Title,
 } from '@mantine/core'
 import { AreaChart, BarChart, LineChart } from '@mantine/charts'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNotificationCenter } from '@/core/notifications/NotificationCenterContext'
 import { ErrorStateAlert } from '@/core/ui/ErrorStateAlert'
 
@@ -59,6 +59,16 @@ export function ComponentsPage() {
   const [isChartLoading, setIsChartLoading] = useState(false)
   const [isChartEmpty, setIsChartEmpty] = useState(false)
   const [hasChartError, setHasChartError] = useState(false)
+  const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(
+    () => () => {
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current)
+      }
+    },
+    [],
+  )
 
   const filteredRows = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase()
@@ -115,9 +125,12 @@ export function ComponentsPage() {
 
   const chartData = isChartEmpty ? [] : releaseData
   const refreshChartData = () => {
+    if (refreshTimeoutRef.current) {
+      clearTimeout(refreshTimeoutRef.current)
+    }
     setHasChartError(false)
     setIsChartLoading(true)
-    setTimeout(() => {
+    refreshTimeoutRef.current = setTimeout(() => {
       const shouldError = Math.random() < 0.25
       setIsChartLoading(false)
       setHasChartError(shouldError)

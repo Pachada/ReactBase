@@ -86,8 +86,8 @@ export function ProfileFormCard() {
     },
   })
 
-  const onSubmit = handleSubmit(async (values) => {
-    await saveProfileMutation.mutateAsync(values)
+  const onSubmit = handleSubmit((values) => {
+    saveProfileMutation.mutate(values)
   })
 
   if (profileQuery.isLoading) {

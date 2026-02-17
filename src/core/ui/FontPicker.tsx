@@ -112,7 +112,9 @@ export function FontPicker({ value, onChange }: FontPickerProps) {
     }
 
     const fontName = currentFont.label.replace(/\s+/g, '+')
-    const weights = currentFont.weights ? `:wght@${currentFont.weights}` : ''
+    const weights = currentFont.weights
+      ? `:wght@${currentFont.weights.replace(/,/g, ';')}`
+      : ''
     link.href = `https://fonts.googleapis.com/css2?family=${fontName}${weights}&display=swap`
   }, [currentFont])
 

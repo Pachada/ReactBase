@@ -1,7 +1,7 @@
 import type { AuthState } from '@/core/auth/types'
 
 const AUTH_STORAGE_KEY = 'reactbase.auth'
-const AUTH_REMEMBER_KEY = 'reactbase.auth.remember'
+export const AUTH_REMEMBER_KEY = 'reactbase.auth.remember'
 
 export function loadAuthState(): AuthState {
   // Check both localStorage and sessionStorage
