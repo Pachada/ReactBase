@@ -1,3 +1,42 @@
+/* ──── Sidebar brand icon ──── */
+.sidebar-brand-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: var(--mantine-primary-color-filled);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ──── User profile button ──── */
+.user-profile-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 8px;
+  border-radius: var(--mantine-radius-md);
+  transition: background-color 0.15s ease;
+}
+
+.user-profile-btn:hover {
+  background: var(--mantine-color-default-hover);
+}
+
+.sidebar-user-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  padding: 5px 0;
+  border-radius: var(--mantine-radius-md);
+  transition: background-color 0.15s ease;
+}
+
+.sidebar-user-btn:hover {
+  background: var(--mantine-color-default-hover);
+}
+
 /* ──── Base ──── */
 html,
 body,
