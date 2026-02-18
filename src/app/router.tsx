@@ -1,32 +1,60 @@
+import { Suspense, lazy, type ReactElement } from 'react'
 import { createBrowserRouter } from 'react-router-dom'
 import { AppShellLayout } from '@/app/AppShellLayout'
 import { ProtectedRoute } from '@/app/routes/ProtectedRoute'
-import { LoginPage } from '@/features/auth/LoginPage'
-import { SignUpPage } from '@/features/auth/SignUpPage'
-import { ForgotPasswordPage } from '@/features/auth/ForgotPasswordPage'
-import { AdminPage } from '@/features/dashboard/AdminPage'
-import { ComponentsPage } from '@/features/dashboard/ComponentsPage'
-import { DashboardPage } from '@/features/dashboard/DashboardPage'
-import { NotFoundPage } from '@/pages/NotFoundPage'
+
+const LoginPage = lazy(() =>
+  import('@/features/auth/LoginPage').then((module) => ({ default: module.LoginPage })),
+)
+const SignUpPage = lazy(() =>
+  import('@/features/auth/SignUpPage').then((module) => ({ default: module.SignUpPage })),
+)
+const ForgotPasswordPage = lazy(() =>
+  import('@/features/auth/ForgotPasswordPage').then((module) => ({
+    default: module.ForgotPasswordPage,
+  })),
+)
+const AdminPage = lazy(() =>
+  import('@/features/dashboard/AdminPage').then((module) => ({
+    default: module.AdminPage,
+  })),
+)
+const ComponentsPage = lazy(() =>
+  import('@/features/dashboard/ComponentsPage').then((module) => ({
+    default: module.ComponentsPage,
+  })),
+)
+const DashboardPage = lazy(() =>
+  import('@/features/dashboard/DashboardPage').then((module) => ({
+    default: module.DashboardPage,
+  })),
+)
+const NotFoundPage = lazy(() =>
+  import('@/pages/NotFoundPage').then((module) => ({ default: module.NotFoundPage })),
+)
+
+const withSuspense = (element: ReactElement) => (
+  <Suspense fallback={null}>{element}</Suspense>
+)
 
 export const router = createBrowserRouter([
   {
     path: '/login',
-    element: <LoginPage />,
+    element: withSuspense(<LoginPage />),
     handle: {
       title: 'Sign in',
     },
   },
   {
     path: '/signup',
-    element: <SignUpPage />,
+    element: withSuspense(<SignUpPage />),
     handle: {
       title: 'Sign up',
     },
   },
   {
     path: '/forgot-password',
-    element: <ForgotPasswordPage />,
+    element: withSuspense(<ForgotPasswordPage />),
     handle: {
       title: 'Forgot password',
     },
@@ -41,7 +69,7 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <DashboardPage />,
+        element: withSuspense(<DashboardPage />),
         handle: {
           breadcrumb: 'Dashboard',
           title: 'Dashboard',
@@ -54,7 +82,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'components',
-        element: <ComponentsPage />,
+        element: withSuspense(<ComponentsPage />),
         handle: {
           breadcrumb: 'Components',
           title: 'Components',
@@ -68,9 +96,7 @@ export const router = createBrowserRouter([
       {
         path: 'admin',
         element: (
-          <ProtectedRoute roles={['admin']}>
-            <AdminPage />
-          </ProtectedRoute>
+          <ProtectedRoute roles={['admin']}>{withSuspense(<AdminPage />)}</ProtectedRoute>
         ),
         handle: {
           breadcrumb: 'Admin',
@@ -86,7 +112,7 @@ export const router = createBrowserRouter([
   },
   {
     path: '*',
-    element: <NotFoundPage />,
+    element: withSuspense(<NotFoundPage />),
     handle: {
       title: 'Not found',
     },

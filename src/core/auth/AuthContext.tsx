@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type PropsWithChildren,
 } from 'react'
@@ -12,6 +13,7 @@ import type { AuthState, LoginCredentials, Role } from '@/core/auth/types'
 
 const DEMO_PASSWORD = 'changeme'
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000 // 30 minutes
+const ACTIVITY_RESET_INTERVAL_MS = 15 * 1000
 const generateUserId = () =>
   typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
     ? crypto.randomUUID()
@@ -36,10 +38,13 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 export function AuthProvider({ children }: PropsWithChildren) {
   const [authState, setAuthState] = useState<AuthState>(() => loadAuthState())
   const [sessionExpiresAt, setSessionExpiresAt] = useState<number | null>(null)
+  const lastActivityResetAtRef = useRef(0)
 
   const resetSessionTimer = useCallback(() => {
     if (authState.status === 'authenticated') {
-      setSessionExpiresAt(Date.now() + SESSION_TIMEOUT_MS)
+      const now = Date.now()
+      lastActivityResetAtRef.current = now
+      setSessionExpiresAt(now + SESSION_TIMEOUT_MS)
     }
   }, [authState.status])
 
@@ -64,7 +69,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
     // Only set session timeout if not remembering (session storage)
     if (!rememberMe) {
-      setSessionExpiresAt(Date.now() + SESSION_TIMEOUT_MS)
+      const now = Date.now()
+      lastActivityResetAtRef.current = now
+      setSessionExpiresAt(now + SESSION_TIMEOUT_MS)
     } else {
       setSessionExpiresAt(null)
     }
@@ -74,6 +81,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     saveAuthState(defaultState)
     setAuthState(defaultState)
     setSessionExpiresAt(null)
+    lastActivityResetAtRef.current = 0
   }, [])
 
   const hasRole = useCallback(
@@ -84,19 +92,57 @@ export function AuthProvider({ children }: PropsWithChildren) {
     [authState.status, authState.user],
   )
 
-  // Initialize session timer on mount if logged in with session storage
   useEffect(() => {
-    if (authState.status === 'authenticated') {
-      const rememberMe = window.localStorage.getItem(AUTH_REMEMBER_KEY) === 'true'
-      if (!rememberMe && !sessionExpiresAt) {
-        // Use setTimeout to avoid setting state directly in effect
-        const timer = setTimeout(() => {
-          setSessionExpiresAt(Date.now() + SESSION_TIMEOUT_MS)
-        }, 0)
-        return () => clearTimeout(timer)
-      }
+    if (authState.status !== 'authenticated') {
+      return
     }
-  }, [authState.status, sessionExpiresAt])
+
+    const rememberMe = window.localStorage.getItem(AUTH_REMEMBER_KEY) === 'true'
+    if (!rememberMe && !sessionExpiresAt) {
+      const timer = setTimeout(() => {
+        resetSessionTimer()
+      }, 0)
+      return () => clearTimeout(timer)
+    }
+  }, [authState.status, resetSessionTimer, sessionExpiresAt])
+
+  useEffect(() => {
+    if (authState.status !== 'authenticated') {
+      return
+    }
+
+    const rememberMe = window.localStorage.getItem(AUTH_REMEMBER_KEY) === 'true'
+    if (rememberMe) {
+      return
+    }
+
+    const onActivity = () => {
+      const now = Date.now()
+      if (now - lastActivityResetAtRef.current < ACTIVITY_RESET_INTERVAL_MS) {
+        return
+      }
+      lastActivityResetAtRef.current = now
+      setSessionExpiresAt(now + SESSION_TIMEOUT_MS)
+    }
+
+    const activityEvents: Array<keyof WindowEventMap> = [
+      'focus',
+      'keydown',
+      'mousedown',
+      'scroll',
+      'touchstart',
+    ]
+
+    activityEvents.forEach((eventName) => {
+      window.addEventListener(eventName, onActivity, { passive: true })
+    })
+
+    return () => {
+      activityEvents.forEach((eventName) => {
+        window.removeEventListener(eventName, onActivity)
+      })
+    }
+  }, [authState.status])
 
   const value = useMemo(
     () => ({

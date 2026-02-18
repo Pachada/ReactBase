@@ -13,8 +13,6 @@ foundations.
 - **Custom animations** (fade-slide entrance, card hover lift, floating accents)
 - **GitHub Copilot skill** for frontend design guidance (`.github/skills/frontend-design/`)
 
-See **[FUTURE_IMPROVEMENTS.md](./FUTURE_IMPROVEMENTS.md)** for 40+ enhancement ideas.
-
 ## Tech stack
 
 - React 19 + TypeScript (strict)

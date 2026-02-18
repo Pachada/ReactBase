@@ -2,29 +2,40 @@ import type { AuthState } from '@/core/auth/types'
 
 const AUTH_STORAGE_KEY = 'reactbase.auth'
 export const AUTH_REMEMBER_KEY = 'reactbase.auth.remember'
+const anonymousState: AuthState = { user: null, token: null, status: 'anonymous' }
+
+interface PersistedAuthState {
+  user: AuthState['user']
+  status: AuthState['status']
+}
 
 export function loadAuthState(): AuthState {
-  // Check both localStorage and sessionStorage
   const rememberMe = window.localStorage.getItem(AUTH_REMEMBER_KEY) === 'true'
   const storage = rememberMe ? window.localStorage : window.sessionStorage
   const rawState = storage.getItem(AUTH_STORAGE_KEY)
 
   if (!rawState) {
-    return { user: null, token: null, status: 'anonymous' }
+    return anonymousState
   }
 
-  let parsedState: AuthState
+  let parsedState: PersistedAuthState
   try {
-    parsedState = JSON.parse(rawState) as AuthState
+    parsedState = JSON.parse(rawState) as PersistedAuthState
   } catch {
     storage.removeItem(AUTH_STORAGE_KEY)
-    return { user: null, token: null, status: 'anonymous' }
-  }
-  if (!parsedState.user || !parsedState.token) {
-    return { user: null, token: null, status: 'anonymous' }
+    return anonymousState
   }
 
-  return { ...parsedState, status: 'authenticated' }
+  if (parsedState.status !== 'authenticated' || !parsedState.user) {
+    storage.removeItem(AUTH_STORAGE_KEY)
+    return anonymousState
+  }
+
+  return {
+    user: parsedState.user,
+    token: `demo-token-${Date.now()}`,
+    status: 'authenticated',
+  }
 }
 
 export function saveAuthState(state: AuthState, rememberMe = false): void {
@@ -35,14 +46,17 @@ export function saveAuthState(state: AuthState, rememberMe = false): void {
     return
   }
 
-  // Save remember preference
   window.localStorage.setItem(AUTH_REMEMBER_KEY, rememberMe ? 'true' : 'false')
 
-  // Save auth state to appropriate storage
   const storage = rememberMe ? window.localStorage : window.sessionStorage
-  storage.setItem(AUTH_STORAGE_KEY, JSON.stringify(state))
+  storage.setItem(
+    AUTH_STORAGE_KEY,
+    JSON.stringify({
+      user: state.user,
+      status: state.status,
+    } satisfies PersistedAuthState),
+  )
 
-  // Clear from the other storage
   const otherStorage = rememberMe ? window.sessionStorage : window.localStorage
   otherStorage.removeItem(AUTH_STORAGE_KEY)
 }

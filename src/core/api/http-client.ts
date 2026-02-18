@@ -8,6 +8,7 @@ interface RequestOptions {
   token?: string | null
   body?: unknown
   headers?: Record<string, string>
+  signal?: AbortSignal
 }
 
 export class HttpClient {
@@ -20,7 +21,7 @@ export class HttpClient {
   async request<TResponse>(
     endpoint: string,
     options: RequestOptions = {},
-  ): Promise<TResponse> {
+  ): Promise<TResponse | undefined> {
     const requestHeaders = new Headers({
       'Content-Type': 'application/json',
       ...options.headers,
@@ -34,6 +35,7 @@ export class HttpClient {
       method: options.method ?? 'GET',
       headers: requestHeaders,
       body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+      signal: options.signal,
     })
 
     if (!response.ok) {
@@ -46,7 +48,7 @@ export class HttpClient {
     }
 
     if (response.status === 204) {
-      return undefined as TResponse
+      return undefined
     }
 
     return (await response.json()) as TResponse
