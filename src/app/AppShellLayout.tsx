@@ -50,7 +50,7 @@ import {
   useMatches,
 } from 'react-router-dom'
 import { useAuth } from '@/core/auth/AuthContext'
-import { ROLE_LABEL } from '@/core/auth/roles'
+import { buildRoleLabel } from '@/core/auth/roles'
 import type { Role } from '@/core/auth/types'
 import { env } from '@/core/config/env'
 import { useNotificationCenter } from '@/core/notifications/NotificationCenterContext'
@@ -375,7 +375,7 @@ export function AppShellLayout() {
                         {auth.user?.name ?? 'Guest'}
                       </Text>
                       <Text size="xs" c="dimmed" lh={1.2}>
-                        {auth.user ? ROLE_LABEL[auth.user.role] : ''}
+                        {auth.user ? buildRoleLabel(auth.user.roleName) : ''}
                       </Text>
                     </Box>
                     <ChevronDown
@@ -389,7 +389,7 @@ export function AppShellLayout() {
                 <Menu.Label>
                   {auth.user?.name}
                   <Text size="xs" c="dimmed">
-                    {auth.user && ROLE_LABEL[auth.user.role]}
+                    {auth.user && buildRoleLabel(auth.user.roleName)}
                   </Text>
                 </Menu.Label>
                 <Menu.Divider />

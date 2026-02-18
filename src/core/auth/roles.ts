@@ -1,12 +1,10 @@
-import type { Role } from '@/core/auth/types'
+import type { ApiRole } from '@/core/api/types'
 
-export const ROLE_LABEL: Record<Role, string> = {
-  admin: 'Admin',
-  editor: 'Editor',
-  viewer: 'Viewer',
+export function buildRoleLabel(roleName: string): string {
+  if (!roleName) return 'Unknown'
+  return roleName.charAt(0).toUpperCase() + roleName.slice(1).toLowerCase()
 }
 
-export const ROLE_OPTIONS = Object.entries(ROLE_LABEL).map(([value, label]) => ({
-  value: value as Role,
-  label,
-}))
+export function buildRoleOptions(roles: ApiRole[]) {
+  return roles.map((r) => ({ value: String(r.id), label: buildRoleLabel(r.name) }))
+}

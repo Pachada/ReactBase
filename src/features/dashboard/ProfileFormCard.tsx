@@ -12,7 +12,6 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
-import { ROLE_OPTIONS } from '@/core/auth/roles'
 import { useNotificationCenter } from '@/core/notifications/NotificationCenterContext'
 import { ErrorStateAlert } from '@/core/ui/ErrorStateAlert'
 import {
@@ -20,6 +19,12 @@ import {
   updateProfile,
   type Profile,
 } from '@/features/dashboard/profile-api'
+
+const ROLE_OPTIONS = [
+  { value: 'admin', label: 'Admin' },
+  { value: 'editor', label: 'Editor' },
+  { value: 'viewer', label: 'Viewer' },
+]
 
 const PROFILE_QUERY_KEY = ['profile']
 
