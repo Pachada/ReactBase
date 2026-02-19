@@ -21,6 +21,21 @@ function getStorage(rememberMe: boolean): Storage {
   return rememberMe ? window.localStorage : window.sessionStorage
 }
 
+function isPersistedAuthState(value: unknown): value is PersistedAuthState {
+  if (typeof value !== 'object' || value === null) return false
+  const v = value as Record<string, unknown>
+  return (
+    v['status'] === 'authenticated' &&
+    typeof v['token'] === 'string' &&
+    v['token'].length > 0 &&
+    typeof v['user'] === 'object' &&
+    v['user'] !== null &&
+    typeof (v['user'] as Record<string, unknown>)['id'] !== 'undefined' &&
+    typeof (v['user'] as Record<string, unknown>)['username'] === 'string' &&
+    typeof (v['user'] as Record<string, unknown>)['email'] === 'string'
+  )
+}
+
 export function loadAuthState(): AuthState {
   const rememberMe = window.localStorage.getItem(AUTH_REMEMBER_KEY) === 'true'
   const storage = getStorage(rememberMe)
@@ -28,15 +43,15 @@ export function loadAuthState(): AuthState {
 
   if (!rawState) return anonymousState
 
-  let parsed: PersistedAuthState
+  let parsed: unknown
   try {
-    parsed = JSON.parse(rawState) as PersistedAuthState
+    parsed = JSON.parse(rawState)
   } catch {
     storage.removeItem(AUTH_STORAGE_KEY)
     return anonymousState
   }
 
-  if (parsed.status !== 'authenticated' || !parsed.user || !parsed.token) {
+  if (!isPersistedAuthState(parsed)) {
     storage.removeItem(AUTH_STORAGE_KEY)
     return anonymousState
   }
