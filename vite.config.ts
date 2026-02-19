@@ -13,6 +13,8 @@ export default defineConfig({
   },
   server: {
     proxy: {
+      // Proxies all /v1 API requests to the backend. Requires the backend server
+      // to be running at http://localhost:3000 for local development.
       '/v1': {
         target: 'http://localhost:3000',
         changeOrigin: true,

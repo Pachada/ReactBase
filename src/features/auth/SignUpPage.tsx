@@ -71,13 +71,27 @@ export function SignUpPage() {
       })
 
       if (envelope) {
-        await loginWithEnvelope(envelope)
-        addNotification({
-          title: 'Account created',
-          message: `Welcome ${values.username}!`,
-          color: 'green',
-        })
-        navigate('/', { replace: true })
+        const envelopeAny = envelope as unknown as Record<string, unknown>
+        const emailConfirmed =
+          envelopeAny.email_confirmed ??
+          (envelopeAny.user as Record<string, unknown> | undefined)?.email_confirmed
+        if (emailConfirmed === false) {
+          addNotification({
+            title: 'Verify your email',
+            message:
+              'Your account has been created. Please verify your email address before signing in.',
+            color: 'blue',
+          })
+          navigate('/login', { replace: true })
+        } else {
+          await loginWithEnvelope(envelope)
+          addNotification({
+            title: 'Account created',
+            message: `Welcome ${values.username}!`,
+            color: 'green',
+          })
+          navigate('/', { replace: true })
+        }
       }
     } catch (error) {
       let message = 'Unable to create account. Please try again.'
@@ -151,7 +165,15 @@ export function SignUpPage() {
                   placeholder="+1 555 000 0000"
                   size="md"
                   type="tel"
-                  {...register('phone')}
+                  {...register('phone', {
+                    validate: (value) => {
+                      if (!value || value.trim() === '') return true
+                      return (
+                        /^\+?[0-9\s\-().]{7,20}$/.test(value) ||
+                        'Please enter a valid phone number'
+                      )
+                    },
+                  })}
                   error={formState.errors.phone?.message}
                 />
               </SimpleGrid>
@@ -187,6 +209,7 @@ export function SignUpPage() {
                     clearable
                     popoverProps={{ withinPortal: true }}
                     onKeyDown={handleDateKeyDown}
+                    maxDate={new Date()}
                   />
                 )}
               />

@@ -18,12 +18,13 @@ export class HttpClient {
   private readonly baseUrl: string
   private refreshHandler: RefreshHandler | null = null
   private logoutHandler: LogoutHandler | null = null
+  private refreshPromise: Promise<string | null> | null = null
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl
   }
 
-  setRefreshHandler(handler: RefreshHandler): void {
+  setRefreshHandler(handler: RefreshHandler | null): void {
     this.refreshHandler = handler
   }
 
@@ -37,9 +38,16 @@ export class HttpClient {
   ): Promise<TResponse | undefined> {
     const response = await this.doRequest(endpoint, options)
 
-    // Attempt silent token refresh on 401
+    // Attempt silent token refresh on 401 — use a singleton promise to avoid concurrent refreshes
     if (response.status === 401 && this.refreshHandler) {
-      const newToken = await this.refreshHandler().catch(() => null)
+      if (!this.refreshPromise) {
+        this.refreshPromise = this.refreshHandler()
+          .catch(() => null)
+          .finally(() => {
+            this.refreshPromise = null
+          })
+      }
+      const newToken = await this.refreshPromise
       if (newToken) {
         const retryResponse = await this.doRequest(endpoint, {
           ...options,

@@ -78,6 +78,7 @@ function getInitials(name: string): string {
   return name
     .split(' ')
     .map((n) => n[0])
+    .filter(Boolean)
     .join('')
     .toUpperCase()
     .slice(0, 2)
@@ -177,11 +178,12 @@ function ProfileSection() {
 
   // Change password form
   const {
-    register: regPw,
+    register: registerPassword,
     handleSubmit: handlePwSubmit,
     formState: pwFormState,
     reset: resetPw,
     getValues: getPwValues,
+    trigger: triggerPw,
   } = useForm<ChangePasswordForm>({
     defaultValues: { new_password: '', confirm_password: '' },
   })
@@ -197,7 +199,8 @@ function ProfileSection() {
   }, [userData, reset])
 
   const updateMutation = useMutation({
-    mutationFn: (body: UpdateUserRequest) => usersApi.updateUser(userId, body, token),
+    mutationFn: (body: UpdateUserRequest) =>
+      usersApi.updateUser(userId, body, token, auth.hasRole(['admin'])),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['currentSession'] })
       setIsEditing(false)
@@ -243,13 +246,16 @@ function ProfileSection() {
     if (values.first_name !== userData.first_name) body.first_name = values.first_name
     if (values.last_name !== userData.last_name) body.last_name = values.last_name
     if (values.username !== userData.username) body.username = values.username
-    if (values.birthday) {
-      const raw =
-        values.birthday instanceof Date
-          ? values.birthday
-          : parseBirthday(values.birthday as unknown as string)
-      const formatted = raw ? formatYMD(raw) : null
-      if (formatted && formatted !== userData.birthday) body.birthday = formatted
+    const originalBirthday = userData.birthday ?? null
+    const newBirthday =
+      values.birthday instanceof Date
+        ? values.birthday
+        : parseBirthday(values.birthday as unknown as string)
+    if (newBirthday) {
+      const formatted = formatYMD(newBirthday)
+      if (formatted !== originalBirthday) body.birthday = formatted
+    } else if (originalBirthday) {
+      body.birthday = undefined
     }
     if (Object.keys(body).length === 0) {
       addNotification({ title: 'No changes', message: 'Nothing to save.', color: 'blue' })
@@ -594,16 +600,20 @@ function ProfileSection() {
             <PasswordInput
               label="New password"
               placeholder="At least 8 characters"
-              {...regPw('new_password', {
+              {...registerPassword('new_password', {
                 required: 'Required',
                 minLength: { value: 8, message: 'At least 8 characters' },
+                onChange: () => {
+                  if (pwFormState.dirtyFields.confirm_password)
+                    triggerPw('confirm_password')
+                },
               })}
               error={pwFormState.errors.new_password?.message}
             />
             <PasswordInput
               label="Confirm new password"
               placeholder="Repeat new password"
-              {...regPw('confirm_password', {
+              {...registerPassword('confirm_password', {
                 required: 'Required',
                 validate: (v) =>
                   v === getPwValues('new_password') || 'Passwords do not match',
@@ -712,12 +722,14 @@ function AppearanceSection() {
               Sets the primary color used across buttons, links, and highlights.
             </Text>
           </Box>
-          <Group gap="sm" wrap="wrap">
+          <Group gap="sm" wrap="wrap" role="radiogroup" aria-label="Accent color">
             {PRIMARY_COLOR_PRESETS.map((preset) => (
               <Tooltip key={preset.value} label={preset.label} withArrow>
                 <UnstyledButton
                   onClick={() => setPrimaryColor(preset.value)}
                   aria-label={`Select ${preset.label} color`}
+                  role="radio"
+                  aria-checked={primaryColor === preset.value}
                 >
                   <ColorSwatch
                     color={preset.previewColor}

@@ -40,7 +40,7 @@ export interface PaginatedUsersEnvelope {
 
 export interface CursorUsersEnvelope {
   data: ApiUser[]
-  count: number
+  returned: number
   next_cursor?: string
 }
 

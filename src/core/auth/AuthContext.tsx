@@ -94,12 +94,16 @@ export function AuthProvider({ children }: PropsWithChildren) {
         if (matched) {
           roleName = matched.name.toLowerCase()
         } else if (roleIdentifier) {
-          // Identifier is already the name (NoSQL, roles list unavailable or unlisted)
-          roleName = String(roleIdentifier).toLowerCase()
+          // Only treat non-numeric identifiers as role names (numeric ones are unresolved IDs)
+          const identifierStr = String(roleIdentifier)
+          if (!/^\d+$/.test(identifierStr.trim())) roleName = identifierStr.toLowerCase()
         }
       } catch {
-        // non-fatal: use the identifier directly if it looks like a name
-        if (roleIdentifier) roleName = String(roleIdentifier).toLowerCase()
+        // non-fatal: only treat non-numeric identifiers as role names
+        if (roleIdentifier) {
+          const identifierStr = String(roleIdentifier)
+          if (!/^\d+$/.test(identifierStr.trim())) roleName = identifierStr.toLowerCase()
+        }
       }
 
       const user: AuthUser = {
@@ -120,7 +124,11 @@ export function AuthProvider({ children }: PropsWithChildren) {
         status: 'authenticated',
       }
 
-      saveAuthState(nextState, rememberMe)
+      try {
+        saveAuthState(nextState, rememberMe)
+      } catch (error) {
+        throw error instanceof Error ? error : new Error('Failed to persist auth state')
+      }
       setAuthState(nextState)
     },
     [],
@@ -147,7 +155,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         /* fire-and-forget */
       })
     }
-    apiClient.setRefreshHandler(null as never)
+    apiClient.setRefreshHandler(null)
     saveAuthState(anonymousState)
     setAuthState(anonymousState)
   }, [authState.token])

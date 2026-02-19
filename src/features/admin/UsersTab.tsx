@@ -65,7 +65,12 @@ export function UsersTab({ roles }: UsersTabProps) {
   const nextCursor = data?.next_cursor
 
   function goNext() {
-    if (nextCursor) setCursorStack((prev) => [...prev, nextCursor])
+    if (nextCursor) {
+      setCursorStack((prev) => {
+        if (prev.length >= 100) return prev
+        return [...prev, nextCursor]
+      })
+    }
   }
 
   function goPrev() {
@@ -76,7 +81,7 @@ export function UsersTab({ roles }: UsersTabProps) {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, body }: { id: EntityId; body: UpdateUserRequest }) =>
-      usersApi.updateUser(id, body, token),
+      usersApi.updateUser(id, body, token, true),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] })
       closeEdit()
@@ -93,7 +98,7 @@ export function UsersTab({ roles }: UsersTabProps) {
 
   const toggleEnableMutation = useMutation({
     mutationFn: ({ id, enable }: { id: EntityId; enable: boolean }) =>
-      usersApi.updateUser(id, { enable }, token),
+      usersApi.updateUser(id, { enable }, token, true),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] })
       closeDelete()
@@ -139,8 +144,18 @@ export function UsersTab({ roles }: UsersTabProps) {
       values.birthday instanceof Date
         ? values.birthday
         : parseBirthday(values.birthday as unknown as string)
-    if ((originalBirthday?.getTime() ?? null) !== (newBirthday?.getTime() ?? null)) {
-      body.birthday = newBirthday ? formatYMD(newBirthday) : undefined
+    if (originalBirthday || newBirthday) {
+      if (!originalBirthday && newBirthday) {
+        body.birthday = formatYMD(newBirthday)
+      } else if (originalBirthday && !newBirthday) {
+        body.birthday = undefined
+      } else if (
+        originalBirthday &&
+        newBirthday &&
+        originalBirthday.getTime() !== newBirthday.getTime()
+      ) {
+        body.birthday = formatYMD(newBirthday)
+      }
     }
 
     if (Object.keys(body).length === 0) {
@@ -280,6 +295,7 @@ export function UsersTab({ roles }: UsersTabProps) {
                   clearable
                   popoverProps={{ withinPortal: true, zIndex: 400 }}
                   onKeyDown={handleDateKeyDown}
+                  maxDate={new Date()}
                 />
               )}
             />

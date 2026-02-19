@@ -16,6 +16,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link } from 'react-router-dom'
 import { apiClient } from '@/core/api/http-client'
+import { ApiError } from '@/core/api/ApiError'
 import type { AuthEnvelope } from '@/core/api/types'
 import { useNotificationCenter } from '@/core/notifications/NotificationCenterContext'
 
@@ -50,8 +51,12 @@ export function ForgotPasswordPage() {
       })
       setEmail(values.email)
       setStep(1)
-    } catch {
-      emailForm.setError('email', { message: 'Could not send OTP. Please try again.' })
+    } catch (error) {
+      let message = 'Could not send OTP. Please try again.'
+      if (error instanceof ApiError && error.status === 404) {
+        message = 'No account found with that email address.'
+      }
+      emailForm.setError('email', { message })
     } finally {
       setIsLoading(false)
     }
@@ -65,15 +70,19 @@ export function ForgotPasswordPage() {
         '/v1/password-recovery/validate-code',
         { method: 'POST', body: { otp } },
       )
+      // NOTE: The access_token returned here is a temporary reset token.
+      // The backend must scope it to password-reset only and enforce a short TTL (5–10 min).
       if (!envelope?.access_token) throw new Error('Invalid code')
       setTempToken(envelope.access_token)
       setStep(2)
-    } catch {
-      addNotification({
-        title: 'Invalid code',
-        message: 'Please check your OTP and try again.',
-        color: 'red',
-      })
+    } catch (error) {
+      let message = 'Please check your OTP and try again.'
+      if (error instanceof ApiError) {
+        if (error.status === 410)
+          message = 'This code has expired. Please request a new one.'
+        else if (error.status === 400) message = 'Invalid code. Please try again.'
+      }
+      addNotification({ title: 'Invalid code', message, color: 'red' })
     } finally {
       setIsLoading(false)
     }
@@ -95,10 +104,12 @@ export function ForgotPasswordPage() {
         body: { new_password: values.password },
       })
       setStep(3)
-    } catch {
-      pwdForm.setError('root', {
-        message: 'Failed to change password. Please try again.',
-      })
+    } catch (error) {
+      let message = 'Failed to change password. Please try again.'
+      if (error instanceof ApiError && error.status === 401) {
+        message = 'Your reset session has expired. Please start over.'
+      }
+      pwdForm.setError('root', { message })
     } finally {
       setIsLoading(false)
     }

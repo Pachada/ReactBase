@@ -41,10 +41,16 @@ export const usersApi = {
     id: EntityId,
     body: UpdateUserRequest,
     token: string,
+    isAdmin = false,
   ): Promise<ApiUser | undefined> {
+    const payload: UpdateUserRequest = { ...body }
+    if (!isAdmin) {
+      delete payload.role_id
+      delete payload.enable
+    }
     return apiClient.request<ApiUser>(`/v1/users/${id}`, {
       method: 'PUT',
-      body,
+      body: payload,
       token,
     })
   },
