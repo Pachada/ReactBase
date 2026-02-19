@@ -1,7 +1,9 @@
 import { Suspense, lazy, type ReactElement } from 'react'
 import { createBrowserRouter } from 'react-router-dom'
+import { ErrorBoundary } from 'react-error-boundary'
 import { AppShellLayout } from '@/app/AppShellLayout'
 import { ProtectedRoute } from '@/app/routes/ProtectedRoute'
+import { ErrorPage } from '@/pages/ErrorPage'
 
 const LoginPage = lazy(() =>
   import('@/features/auth/LoginPage').then((module) => ({ default: module.LoginPage })),
@@ -39,7 +41,9 @@ const NotFoundPage = lazy(() =>
 )
 
 const withSuspense = (element: ReactElement) => (
-  <Suspense fallback={null}>{element}</Suspense>
+  <ErrorBoundary FallbackComponent={ErrorPage}>
+    <Suspense fallback={null}>{element}</Suspense>
+  </ErrorBoundary>
 )
 
 export const router = createBrowserRouter([
