@@ -10,6 +10,10 @@ export interface AuthUser {
   email: string
   role_id: EntityId
   roleName: Role
+  first_name: string
+  last_name: string
+  birthday: string | null
+  phone: string | null
 }
 
 export interface AuthState {

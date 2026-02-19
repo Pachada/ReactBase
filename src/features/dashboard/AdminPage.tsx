@@ -18,7 +18,7 @@ export function AdminPage() {
     enabled: !!token,
   })
 
-  const { isLoading: statusesLoading } = useQuery({
+  const { data: statuses = [], isLoading: statusesLoading } = useQuery({
     queryKey: ['statuses'],
     queryFn: () => statusesApi.listStatuses(token),
     enabled: !!token,
@@ -53,10 +53,10 @@ export function AdminPage() {
             <UsersTab roles={roles} />
           </Tabs.Panel>
           <Tabs.Panel value="roles">
-            <RolesTab />
+            <RolesTab roles={roles} />
           </Tabs.Panel>
           <Tabs.Panel value="statuses">
-            <StatusesTab />
+            <StatusesTab statuses={statuses} />
           </Tabs.Panel>
         </Tabs>
       )}

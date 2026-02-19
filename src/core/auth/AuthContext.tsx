@@ -23,6 +23,7 @@ interface AuthContextValue extends AuthState {
   loginWithEnvelope: (envelope: AuthEnvelope, rememberMe?: boolean) => Promise<void>
   logout: () => void
   hasRole: (roles: Role[]) => boolean
+  refreshUser: (token: string) => Promise<void>
   // sessionExpiresAt kept for API compat (null — server manages sessions)
   sessionExpiresAt: number | null
   resetSessionTimer: () => void
@@ -116,6 +117,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
         email: apiUser.email,
         role_id: roleIdentifier as AuthUser['role_id'],
         roleName,
+        first_name: apiUser.first_name ?? '',
+        last_name: apiUser.last_name ?? '',
+        birthday: apiUser.birthday ?? null,
+        phone: apiUser.phone ?? null,
       }
 
       const nextState: AuthState = {
@@ -169,6 +174,30 @@ export function AuthProvider({ children }: PropsWithChildren) {
     [authState.status, authState.user],
   )
 
+  const refreshUser = useCallback(async (token: string) => {
+    const envelope = await sessionApi.getSession(token)
+    const apiUser = envelope?.user
+    if (!apiUser) return
+    setAuthState((prev) => {
+      if (prev.status !== 'authenticated' || !prev.user) return prev
+      const updated: AuthUser = {
+        ...prev.user,
+        username: apiUser.username,
+        name:
+          `${apiUser.first_name ?? ''} ${apiUser.last_name ?? ''}`.trim() ||
+          apiUser.username,
+        email: apiUser.email,
+        first_name: apiUser.first_name ?? '',
+        last_name: apiUser.last_name ?? '',
+        birthday: apiUser.birthday ?? null,
+        phone: apiUser.phone ?? null,
+      }
+      const next = { ...prev, user: updated }
+      saveAuthState(next, getRememberMePreference())
+      return next
+    })
+  }, [])
+
   const value = useMemo(
     () => ({
       ...authState,
@@ -176,10 +205,11 @@ export function AuthProvider({ children }: PropsWithChildren) {
       loginWithEnvelope,
       logout,
       hasRole,
+      refreshUser,
       sessionExpiresAt: null,
       resetSessionTimer: () => {},
     }),
-    [authState, hasRole, login, loginWithEnvelope, logout],
+    [authState, hasRole, login, loginWithEnvelope, logout, refreshUser],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

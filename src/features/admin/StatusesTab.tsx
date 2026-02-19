@@ -2,7 +2,6 @@ import {
   ActionIcon,
   Button,
   Group,
-  Loader,
   Modal,
   Stack,
   Table,
@@ -13,7 +12,7 @@ import { useDisclosure } from '@mantine/hooks'
 import { Plus, Pencil, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/core/auth/AuthContext'
 import type { ApiStatus, StatusInput } from '@/core/api/types'
 import { statusesApi } from '@/features/admin/statuses-api'
@@ -22,7 +21,7 @@ interface StatusForm {
   description: string
 }
 
-export function StatusesTab() {
+export function StatusesTab({ statuses }: { statuses: ApiStatus[] }) {
   const auth = useAuth()
   const token = auth.token ?? ''
   const queryClient = useQueryClient()
@@ -30,12 +29,6 @@ export function StatusesTab() {
   const [deleteOpened, { open: openDelete, close: closeDelete }] = useDisclosure(false)
   const [editTarget, setEditTarget] = useState<ApiStatus | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ApiStatus | null>(null)
-
-  const { data: statuses = [], isLoading } = useQuery({
-    queryKey: ['statuses'],
-    queryFn: () => statusesApi.listStatuses(token),
-    enabled: !!token,
-  })
 
   const { register, handleSubmit, formState, reset } = useForm<StatusForm>({
     defaultValues: { description: '' },
@@ -102,50 +95,46 @@ export function StatusesTab() {
           </Button>
         </Group>
 
-        {isLoading ? (
-          <Loader mx="auto" my="xl" />
-        ) : (
-          <Table highlightOnHover withTableBorder withColumnBorders>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>ID</Table.Th>
-                <Table.Th>Description</Table.Th>
-                <Table.Th>Actions</Table.Th>
+        <Table highlightOnHover withTableBorder withColumnBorders>
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th>ID</Table.Th>
+              <Table.Th>Description</Table.Th>
+              <Table.Th>Actions</Table.Th>
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
+            {statuses.map((s) => (
+              <Table.Tr key={s.id}>
+                <Table.Td>{s.id}</Table.Td>
+                <Table.Td>{s.description}</Table.Td>
+                <Table.Td>
+                  <Group gap="xs">
+                    <ActionIcon variant="subtle" onClick={() => handleEdit(s)}>
+                      <Pencil size={14} />
+                    </ActionIcon>
+                    <ActionIcon
+                      variant="subtle"
+                      color="red"
+                      onClick={() => handleDelete(s)}
+                    >
+                      <Trash2 size={14} />
+                    </ActionIcon>
+                  </Group>
+                </Table.Td>
               </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {statuses.map((s) => (
-                <Table.Tr key={s.id}>
-                  <Table.Td>{s.id}</Table.Td>
-                  <Table.Td>{s.description}</Table.Td>
-                  <Table.Td>
-                    <Group gap="xs">
-                      <ActionIcon variant="subtle" onClick={() => handleEdit(s)}>
-                        <Pencil size={14} />
-                      </ActionIcon>
-                      <ActionIcon
-                        variant="subtle"
-                        color="red"
-                        onClick={() => handleDelete(s)}
-                      >
-                        <Trash2 size={14} />
-                      </ActionIcon>
-                    </Group>
-                  </Table.Td>
-                </Table.Tr>
-              ))}
-              {statuses.length === 0 && (
-                <Table.Tr>
-                  <Table.Td colSpan={3}>
-                    <Text ta="center" c="dimmed" py="md">
-                      No statuses found
-                    </Text>
-                  </Table.Td>
-                </Table.Tr>
-              )}
-            </Table.Tbody>
-          </Table>
-        )}
+            ))}
+            {statuses.length === 0 && (
+              <Table.Tr>
+                <Table.Td colSpan={3}>
+                  <Text ta="center" c="dimmed" py="md">
+                    No statuses found
+                  </Text>
+                </Table.Td>
+              </Table.Tr>
+            )}
+          </Table.Tbody>
+        </Table>
       </Stack>
 
       <Modal

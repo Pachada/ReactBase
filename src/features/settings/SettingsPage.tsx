@@ -37,8 +37,9 @@ import {
   X,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import type React from 'react'
 import { Controller, useForm } from 'react-hook-form'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation } from '@tanstack/react-query'
 import { useAuth } from '@/core/auth/AuthContext'
 import type { UpdateUserRequest } from '@/core/api/types'
 import { usersApi } from '@/features/admin/users-api'
@@ -162,17 +163,10 @@ function ProfileSection() {
   const token = auth.token ?? ''
   const userId = auth.user?.id ?? ''
   const { addNotification } = useNotificationCenter()
-  const queryClient = useQueryClient()
   const [isEditing, setIsEditing] = useState(false)
   const [pwModalOpened, { open: openPwModal, close: closePwModal }] = useDisclosure(false)
 
-  const { data: sessionData, isLoading } = useQuery({
-    queryKey: ['currentSession'],
-    queryFn: () => sessionApi.getSession(token),
-    enabled: !!token,
-  })
-
-  const userData = sessionData?.user
+  const userData = auth.user
 
   // Profile edit form (only editable fields)
   const { register, control, handleSubmit, formState, reset } = useForm<ProfileForm>({
@@ -205,7 +199,7 @@ function ProfileSection() {
     mutationFn: (body: UpdateUserRequest) =>
       usersApi.updateUser(userId, body, token, auth.hasRole(['admin'])),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['currentSession'] })
+      void auth.refreshUser(token)
       setIsEditing(false)
       addNotification({
         title: 'Profile updated',
@@ -428,7 +422,7 @@ function ProfileSection() {
           )}
         </Group>
 
-        {isLoading ? (
+        {!userData ? (
           <Group justify="center" py="xl">
             <Loader size="sm" />
           </Group>
@@ -662,6 +656,23 @@ function AppearanceSection() {
   const { tokens, updateTokens, resetTokens } = useThemeTokens()
   const { addNotification } = useNotificationCenter()
 
+  function handleSwatchKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
+    const keys = ['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'Home', 'End']
+    if (!keys.includes(e.key)) return
+    e.preventDefault()
+    const idx = PRIMARY_COLOR_PRESETS.findIndex((p) => p.value === primaryColor)
+    let next = idx
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown')
+      next = (idx + 1) % PRIMARY_COLOR_PRESETS.length
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp')
+      next = (idx - 1 + PRIMARY_COLOR_PRESETS.length) % PRIMARY_COLOR_PRESETS.length
+    else if (e.key === 'Home') next = 0
+    else if (e.key === 'End') next = PRIMARY_COLOR_PRESETS.length - 1
+    setPrimaryColor(PRIMARY_COLOR_PRESETS[next].value)
+    const buttons = e.currentTarget.querySelectorAll<HTMLButtonElement>('[role="radio"]')
+    buttons[next]?.focus()
+  }
+
   // Reflect 'auto' vs explicit scheme
   const schemeValue = colorScheme === 'auto' ? 'auto' : computedColorScheme
 
@@ -726,7 +737,13 @@ function AppearanceSection() {
               Sets the primary color used across buttons, links, and highlights.
             </Text>
           </Box>
-          <Group gap="sm" wrap="wrap" role="radiogroup" aria-label="Accent color">
+          <Group
+            gap="sm"
+            wrap="wrap"
+            role="radiogroup"
+            aria-label="Accent color"
+            onKeyDown={handleSwatchKeyDown}
+          >
             {PRIMARY_COLOR_PRESETS.map((preset) => (
               <Tooltip key={preset.value} label={preset.label} withArrow>
                 <UnstyledButton
@@ -734,6 +751,7 @@ function AppearanceSection() {
                   aria-label={`Select ${preset.label} color`}
                   role="radio"
                   aria-checked={primaryColor === preset.value}
+                  tabIndex={primaryColor === preset.value ? 0 : -1}
                 >
                   <ColorSwatch
                     color={preset.previewColor}
