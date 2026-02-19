@@ -22,6 +22,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/core/auth/AuthContext'
 import type { ApiRole, ApiUser, EntityId, UpdateUserRequest } from '@/core/api/types'
 import { usersApi } from '@/features/admin/users-api'
+import {
+  DATE_FORMAT,
+  formatYMD,
+  handleDateKeyDown,
+  parseBirthday,
+} from '@/core/utils/date'
 
 interface EditUserForm {
   username: string
@@ -34,22 +40,6 @@ interface EditUserForm {
 
 interface UsersTabProps {
   roles: ApiRole[]
-}
-
-/** Parse a YYYY-MM-DD birthday string as a local date (no UTC shift) */
-function parseBirthday(raw: string | null | undefined): Date | null {
-  if (!raw) return null
-  const [y, m, d] = raw.split('-').map(Number)
-  if (!y || !m || !d) return null
-  return new Date(y, m - 1, d)
-}
-
-/** Format a Date as YYYY-MM-DD in local time */
-function formatYMD(d: Date): string {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
 }
 
 export function UsersTab({ roles }: UsersTabProps) {
@@ -134,7 +124,10 @@ export function UsersTab({ roles }: UsersTabProps) {
     if (values.role_id !== editTarget.role_id) body.role_id = values.role_id
 
     const originalBirthday = parseBirthday(editTarget.birthday)
-    const newBirthday = values.birthday ? new Date(values.birthday) : null
+    const newBirthday =
+      values.birthday instanceof Date
+        ? values.birthday
+        : parseBirthday(values.birthday as unknown as string)
     if ((originalBirthday?.getTime() ?? null) !== (newBirthday?.getTime() ?? null)) {
       body.birthday = newBirthday ? formatYMD(newBirthday) : undefined
     }
@@ -242,11 +235,13 @@ export function UsersTab({ roles }: UsersTabProps) {
               render={({ field }) => (
                 <DateInput
                   label="Birthday"
-                  valueFormat="MM/DD/YYYY"
+                  placeholder={DATE_FORMAT}
+                  valueFormat={DATE_FORMAT}
                   value={field.value}
                   onChange={field.onChange}
                   clearable
                   popoverProps={{ withinPortal: true, zIndex: 400 }}
+                  onKeyDown={handleDateKeyDown}
                 />
               )}
             />

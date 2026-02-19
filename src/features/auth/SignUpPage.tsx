@@ -18,6 +18,7 @@ import { usersApi } from '@/features/admin/users-api'
 import { useAuth } from '@/core/auth/AuthContext'
 import { ApiError } from '@/core/api/ApiError'
 import { useNotificationCenter } from '@/core/notifications/NotificationCenterContext'
+import { DATE_FORMAT, formatYMD, handleDateKeyDown } from '@/core/utils/date'
 
 interface SignUpFormValues {
   username: string
@@ -56,10 +57,7 @@ export function SignUpPage() {
       return
     }
 
-    const bd = values.birthday ? new Date(values.birthday) : null
-    const birthdayYMD = bd
-      ? `${bd.getFullYear()}-${String(bd.getMonth() + 1).padStart(2, '0')}-${String(bd.getDate()).padStart(2, '0')}`
-      : ''
+    const birthdayYMD = values.birthday instanceof Date ? formatYMD(values.birthday) : ''
 
     try {
       const envelope = await usersApi.createUser({
@@ -181,13 +179,14 @@ export function SignUpPage() {
                 render={({ field }) => (
                   <DateInput
                     label="Birthday"
-                    placeholder="MM/DD/YYYY"
+                    placeholder={DATE_FORMAT}
                     size="md"
-                    valueFormat="MM/DD/YYYY"
+                    valueFormat={DATE_FORMAT}
                     value={field.value}
                     onChange={field.onChange}
                     clearable
                     popoverProps={{ withinPortal: true }}
+                    onKeyDown={handleDateKeyDown}
                   />
                 )}
               />

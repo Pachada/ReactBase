@@ -48,6 +48,13 @@ import { PRIMARY_COLOR_PRESETS } from '@/core/theme/color-presets'
 import { useThemeTokens } from '@/core/theme/ThemeTokensContext'
 import { FontPicker } from '@/core/ui/FontPicker'
 import { useNotificationCenter } from '@/core/notifications/NotificationCenterContext'
+import {
+  DATE_FORMAT,
+  formatBirthdayDisplay,
+  formatYMD,
+  handleDateKeyDown,
+  parseBirthday,
+} from '@/core/utils/date'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -66,20 +73,6 @@ interface ChangePasswordForm {
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function parseBirthday(raw: string | null | undefined): Date | null {
-  if (!raw) return null
-  const [y, m, d] = raw.split('-').map(Number)
-  if (!y || !m || !d) return null
-  return new Date(y, m - 1, d)
-}
-
-function formatYMD(d: Date): string {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
-}
 
 function getInitials(name: string): string {
   return name
@@ -252,9 +245,11 @@ function ProfileSection() {
     if (values.username !== userData.username) body.username = values.username
     if (values.birthday) {
       const raw =
-        values.birthday instanceof Date ? values.birthday : new Date(values.birthday)
-      const formatted = formatYMD(raw)
-      if (formatted !== userData.birthday) body.birthday = formatted
+        values.birthday instanceof Date
+          ? values.birthday
+          : parseBirthday(values.birthday as unknown as string)
+      const formatted = raw ? formatYMD(raw) : null
+      if (formatted && formatted !== userData.birthday) body.birthday = formatted
     }
     if (Object.keys(body).length === 0) {
       addNotification({ title: 'No changes', message: 'Nothing to save.', color: 'blue' })
@@ -455,12 +450,13 @@ function ProfileSection() {
                   render={({ field }) => (
                     <DateInput
                       label="Birthday"
-                      placeholder="YYYY-MM-DD"
-                      valueFormat="YYYY-MM-DD"
+                      placeholder={DATE_FORMAT}
+                      valueFormat={DATE_FORMAT}
                       value={field.value}
                       onChange={field.onChange}
                       maxDate={new Date()}
                       clearable
+                      onKeyDown={handleDateKeyDown}
                     />
                   )}
                 />
@@ -538,7 +534,10 @@ function ProfileSection() {
             <Divider mb="lg" />
             <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg" mb="lg">
               <InfoRow label="Username" value={userData?.username} />
-              <InfoRow label="Birthday" value={userData?.birthday ?? undefined} />
+              <InfoRow
+                label="Birthday"
+                value={formatBirthdayDisplay(userData?.birthday)}
+              />
             </SimpleGrid>
             <Divider mb="lg" />
             <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">

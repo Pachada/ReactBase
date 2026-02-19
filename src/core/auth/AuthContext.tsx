@@ -84,10 +84,24 @@ export function AuthProvider({ children }: PropsWithChildren) {
       let roleName = 'viewer'
       try {
         const roles = await rolesApi.listRoles(access_token)
-        const matched = roles.find((r) => String(r.id) === String(apiUser.role_id))
-        if (matched) roleName = matched.name
+        // SQL: role_id is a numeric FK → match by id
+        // NoSQL: role_id IS the name string → match by name (case-insensitive)
+        const matched = roles.find(
+          (r) =>
+            String(r.id) === String(apiUser.role_id) ||
+            r.name.toLowerCase() === String(apiUser.role_id).toLowerCase(),
+        )
+        if (matched) {
+          roleName = matched.name.toLowerCase()
+        } else if (typeof apiUser.role_id === 'string' && apiUser.role_id) {
+          // NoSQL: role_id not in list but is already the name
+          roleName = apiUser.role_id.toLowerCase()
+        }
       } catch {
-        // non-fatal
+        // non-fatal: if role_id is a string name (NoSQL), use it directly
+        if (typeof apiUser.role_id === 'string' && apiUser.role_id) {
+          roleName = apiUser.role_id.toLowerCase()
+        }
       }
 
       const user: AuthUser = {
