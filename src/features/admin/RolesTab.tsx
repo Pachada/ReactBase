@@ -16,7 +16,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/core/auth/AuthContext'
-import type { ApiRole, RoleInput } from '@/core/api/types'
+import type { ApiRole, EntityId, RoleInput } from '@/core/api/types'
 import { rolesApi } from '@/features/admin/roles-api'
 
 interface RoleForm {
@@ -51,7 +51,7 @@ export function RolesTab() {
   })
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, body }: { id: number; body: RoleInput }) =>
+    mutationFn: ({ id, body }: { id: EntityId; body: RoleInput }) =>
       rolesApi.updateRole(id, body, token),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['roles'] })
@@ -60,7 +60,7 @@ export function RolesTab() {
   })
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => rolesApi.deleteRole(id, token),
+    mutationFn: (id: EntityId) => rolesApi.deleteRole(id, token),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['roles'] })
       closeDelete()
@@ -68,7 +68,7 @@ export function RolesTab() {
   })
 
   const toggleEnableMutation = useMutation({
-    mutationFn: ({ id, name, enable }: { id: number; name: string; enable: boolean }) =>
+    mutationFn: ({ id, name, enable }: { id: EntityId; name: string; enable: boolean }) =>
       rolesApi.updateRole(id, { name, enable }, token),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['roles'] })

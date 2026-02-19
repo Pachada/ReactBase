@@ -4,6 +4,7 @@ import type {
   AuthEnvelope,
   CreateUserRequest,
   DataUserEnvelope,
+  EntityId,
   PaginatedUsersEnvelope,
   UpdateUserRequest,
 } from '@/core/api/types'
@@ -24,7 +25,7 @@ export const usersApi = {
     )
   },
 
-  getUser(id: number, token: string): Promise<DataUserEnvelope | undefined> {
+  getUser(id: EntityId, token: string): Promise<DataUserEnvelope | undefined> {
     return apiClient.request<DataUserEnvelope>(`/v1/users/${id}`, { token })
   },
 
@@ -36,7 +37,7 @@ export const usersApi = {
   },
 
   updateUser(
-    id: number,
+    id: EntityId,
     body: UpdateUserRequest,
     token: string,
   ): Promise<ApiUser | undefined> {
@@ -47,7 +48,7 @@ export const usersApi = {
     })
   },
 
-  deleteUser(id: number, token: string): Promise<undefined> {
+  deleteUser(id: EntityId, token: string): Promise<undefined> {
     return apiClient.request<undefined>(`/v1/users/${id}`, {
       method: 'DELETE',
       token,

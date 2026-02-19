@@ -1,3 +1,8 @@
+// ─── Shared primitives ───────────────────────────────────────────────────────
+
+/** Accepts both SQL integer IDs and NoSQL UUID strings */
+export type EntityId = number | string
+
 // ─── Envelopes ───────────────────────────────────────────────────────────────
 
 export interface MessageEnvelope {
@@ -64,11 +69,11 @@ export interface NullTime {
 // ─── Models ──────────────────────────────────────────────────────────────────
 
 export interface ApiUser {
-  id: number
+  id: EntityId
   username: string
   email: string
   phone: string | null
-  role_id: number
+  role_id: EntityId
   created: string
   updated: string
   enable: boolean
@@ -81,16 +86,16 @@ export interface ApiUser {
 }
 
 export interface ApiSession {
-  id: number
-  user_id: number
-  device_id?: number
+  id: EntityId
+  user_id: EntityId
+  device_id?: EntityId
   created: string
   updated: string
   enable: boolean
 }
 
 export interface ApiRole {
-  id: number
+  id: EntityId
   name: string
   enable: boolean
 }
@@ -101,11 +106,11 @@ export interface ApiStatus {
 }
 
 export interface ApiDevice {
-  id: number
+  id: EntityId
   uuid: string
-  user_id: number
+  user_id: EntityId
   token: string | null
-  app_version_id: number
+  app_version_id: EntityId
   created: string
   updated: string
   enable: boolean
@@ -141,7 +146,7 @@ export interface UpdateUserRequest {
   first_name?: string
   last_name?: string
   birthday?: string
-  role_id?: number
+  role_id?: EntityId
   enable?: boolean
 }
 

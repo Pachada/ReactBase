@@ -1,5 +1,5 @@
 import { apiClient } from '@/core/api/http-client'
-import type { ApiRole, RoleInput } from '@/core/api/types'
+import type { ApiRole, EntityId, RoleInput } from '@/core/api/types'
 
 interface RolesListEnvelope {
   data?: ApiRole[]
@@ -14,7 +14,7 @@ export const rolesApi = {
     return Array.isArray(res) ? res : (res.data ?? [])
   },
 
-  getRole(id: number, token: string): Promise<ApiRole | undefined> {
+  getRole(id: EntityId, token: string): Promise<ApiRole | undefined> {
     return apiClient.request<ApiRole>(`/v1/roles/${id}`, { token })
   },
 
@@ -26,7 +26,7 @@ export const rolesApi = {
     })
   },
 
-  updateRole(id: number, body: RoleInput, token: string): Promise<ApiRole | undefined> {
+  updateRole(id: EntityId, body: RoleInput, token: string): Promise<ApiRole | undefined> {
     return apiClient.request<ApiRole>(`/v1/roles/${id}`, {
       method: 'PUT',
       body,
@@ -34,7 +34,7 @@ export const rolesApi = {
     })
   },
 
-  deleteRole(id: number, token: string): Promise<undefined> {
+  deleteRole(id: EntityId, token: string): Promise<undefined> {
     return apiClient.request<undefined>(`/v1/roles/${id}`, {
       method: 'DELETE',
       token,

@@ -84,7 +84,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       let roleName = 'viewer'
       try {
         const roles = await rolesApi.listRoles(access_token)
-        const matched = roles.find((r) => r.id === apiUser.role_id)
+        const matched = roles.find((r) => String(r.id) === String(apiUser.role_id))
         if (matched) roleName = matched.name
       } catch {
         // non-fatal

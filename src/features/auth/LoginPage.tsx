@@ -13,8 +13,8 @@ import { Zap } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/core/auth/AuthContext'
+import { ApiError } from '@/core/api/ApiError'
 import { useNotificationCenter } from '@/core/notifications/NotificationCenterContext'
-import { ErrorStateAlert } from '@/core/ui/ErrorStateAlert'
 import { getRememberMePreference } from '@/core/auth/auth-storage'
 
 interface LoginFormValues {
@@ -56,15 +56,13 @@ export function LoginPage() {
       })
       navigate(redirectTo, { replace: true })
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : 'Unable to sign in right now. Please try again.'
-      addNotification({
-        title: 'Sign-in failed',
-        message,
-        color: 'red',
-      })
+      let message = 'Unable to sign in right now. Please try again.'
+      if (error instanceof ApiError) {
+        if (error.status === 401) {
+          message = 'Invalid username or password.'
+        }
+      }
+      addNotification({ title: 'Sign-in failed', message, color: 'red' })
       setError('root', { message })
     }
   })
@@ -125,12 +123,9 @@ export function LoginPage() {
                 </Anchor>
               </div>
               {formState.errors.root && (
-                <ErrorStateAlert
-                  title="Authentication error"
-                  message={
-                    formState.errors.root.message ?? 'Unable to sign in right now.'
-                  }
-                />
+                <Text size="sm" c="red">
+                  {formState.errors.root.message}
+                </Text>
               )}
               <Button type="submit" size="md" loading={formState.isSubmitting}>
                 Sign in

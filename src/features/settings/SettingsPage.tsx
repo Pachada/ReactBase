@@ -163,7 +163,7 @@ function SectionNavItem({
 function ProfileSection() {
   const auth = useAuth()
   const token = auth.token ?? ''
-  const userId = auth.user?.id ?? 0
+  const userId = auth.user?.id ?? ''
   const { addNotification } = useNotificationCenter()
   const queryClient = useQueryClient()
   const [isEditing, setIsEditing] = useState(false)

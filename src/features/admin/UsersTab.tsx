@@ -20,7 +20,7 @@ import { useState, useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/core/auth/AuthContext'
-import type { ApiRole, ApiUser, UpdateUserRequest } from '@/core/api/types'
+import type { ApiRole, ApiUser, EntityId, UpdateUserRequest } from '@/core/api/types'
 import { usersApi } from '@/features/admin/users-api'
 
 interface EditUserForm {
@@ -29,7 +29,7 @@ interface EditUserForm {
   first_name: string
   last_name: string
   birthday: Date | null
-  role_id: number
+  role_id: EntityId
 }
 
 interface UsersTabProps {
@@ -74,7 +74,7 @@ export function UsersTab({ roles }: UsersTabProps) {
   const { register, control, handleSubmit, formState, reset } = useForm<EditUserForm>()
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, body }: { id: number; body: UpdateUserRequest }) =>
+    mutationFn: ({ id, body }: { id: EntityId; body: UpdateUserRequest }) =>
       usersApi.updateUser(id, body, token),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] })
@@ -83,7 +83,7 @@ export function UsersTab({ roles }: UsersTabProps) {
   })
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => usersApi.deleteUser(id, token),
+    mutationFn: (id: EntityId) => usersApi.deleteUser(id, token),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] })
       closeDelete()
@@ -91,7 +91,7 @@ export function UsersTab({ roles }: UsersTabProps) {
   })
 
   const toggleEnableMutation = useMutation({
-    mutationFn: ({ id, enable }: { id: number; enable: boolean }) =>
+    mutationFn: ({ id, enable }: { id: EntityId; enable: boolean }) =>
       usersApi.updateUser(id, { enable }, token),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] })
@@ -176,7 +176,8 @@ export function UsersTab({ roles }: UsersTabProps) {
                     <Table.Td>{u.email}</Table.Td>
                     <Table.Td>
                       <Badge variant="light">
-                        {roles.find((r) => r.id === u.role_id)?.name ?? u.role_id}
+                        {roles.find((r) => String(r.id) === String(u.role_id))?.name ??
+                          u.role_id}
                       </Badge>
                     </Table.Td>
                     <Table.Td>
