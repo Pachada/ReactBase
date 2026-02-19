@@ -38,6 +38,12 @@ export interface PaginatedUsersEnvelope {
   error?: string
 }
 
+export interface CursorUsersEnvelope {
+  data: ApiUser[]
+  count: number
+  next_cursor?: string
+}
+
 export interface DataUserEnvelope {
   id: number
   username: string
@@ -74,6 +80,7 @@ export interface ApiUser {
   email: string
   phone: string | null
   role_id: EntityId
+  role?: string // NoSQL: role name returned directly instead of role_id
   created: string
   updated: string
   enable: boolean

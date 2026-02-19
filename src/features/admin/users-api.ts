@@ -3,26 +3,27 @@ import type {
   ApiUser,
   AuthEnvelope,
   CreateUserRequest,
+  CursorUsersEnvelope,
   DataUserEnvelope,
   EntityId,
-  PaginatedUsersEnvelope,
   UpdateUserRequest,
 } from '@/core/api/types'
 
 export interface ListUsersParams {
-  page?: number
-  perPage?: number
+  limit?: number
+  cursor?: string
 }
 
 export const usersApi = {
   listUsers(
-    { page = 1, perPage = 50 }: ListUsersParams,
+    { limit = 20, cursor }: ListUsersParams,
     token: string,
-  ): Promise<PaginatedUsersEnvelope | undefined> {
-    return apiClient.request<PaginatedUsersEnvelope>(
-      `/v1/users?page=${page}&per_page=${perPage}`,
-      { token },
-    )
+  ): Promise<CursorUsersEnvelope | undefined> {
+    const params = new URLSearchParams({ limit: String(limit) })
+    if (cursor) params.set('cursor', cursor)
+    return apiClient.request<CursorUsersEnvelope>(`/v1/users?${params.toString()}`, {
+      token,
+    })
   },
 
   getUser(id: EntityId, token: string): Promise<DataUserEnvelope | undefined> {

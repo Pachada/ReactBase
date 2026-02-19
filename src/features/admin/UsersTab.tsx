@@ -5,7 +5,6 @@ import {
   Group,
   Loader,
   Modal,
-  Pagination,
   Select,
   Stack,
   Table,
@@ -15,7 +14,7 @@ import {
 import { useDisclosure } from '@mantine/hooks'
 import { DateInput } from '@mantine/dates'
 import 'dayjs/locale/en'
-import { Pencil, Trash2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Pencil, Trash2 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -46,20 +45,32 @@ export function UsersTab({ roles }: UsersTabProps) {
   const auth = useAuth()
   const token = auth.token ?? ''
   const queryClient = useQueryClient()
-  const [page, setPage] = useState(1)
+  // cursorStack[0] is always '' (first page); each push is the next_cursor for that page
+  const [cursorStack, setCursorStack] = useState<string[]>([''])
+  const currentCursor = cursorStack[cursorStack.length - 1]
+  const currentPage = cursorStack.length
   const [editTarget, setEditTarget] = useState<ApiUser | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ApiUser | null>(null)
   const [editOpened, { open: openEdit, close: closeEdit }] = useDisclosure(false)
   const [deleteOpened, { open: openDelete, close: closeDelete }] = useDisclosure(false)
 
   const { data, isLoading } = useQuery({
-    queryKey: ['users', page],
-    queryFn: () => usersApi.listUsers({ page, perPage: 20 }, token),
+    queryKey: ['users', currentCursor],
+    queryFn: () =>
+      usersApi.listUsers({ limit: 20, cursor: currentCursor || undefined }, token),
     enabled: !!token,
   })
 
   const users: ApiUser[] = data?.data ?? []
-  const totalPages = data?.max_page ?? 1
+  const nextCursor = data?.next_cursor
+
+  function goNext() {
+    if (nextCursor) setCursorStack((prev) => [...prev, nextCursor])
+  }
+
+  function goPrev() {
+    setCursorStack((prev) => (prev.length > 1 ? prev.slice(0, -1) : prev))
+  }
 
   const { register, control, handleSubmit, formState, reset } = useForm<EditUserForm>()
 
@@ -102,7 +113,7 @@ export function UsersTab({ roles }: UsersTabProps) {
         first_name: editTarget.first_name ?? '',
         last_name: editTarget.last_name ?? '',
         birthday: parseBirthday(editTarget.birthday),
-        role_id: editTarget.role_id,
+        role_id: editTarget.role_id ?? (editTarget.role as EntityId),
       })
     }
   }, [editOpened, editTarget, reset])
@@ -169,7 +180,12 @@ export function UsersTab({ roles }: UsersTabProps) {
                     <Table.Td>{u.email}</Table.Td>
                     <Table.Td>
                       <Badge variant="light">
-                        {roles.find((r) => String(r.id) === String(u.role_id))?.name ??
+                        {roles.find(
+                          (r) =>
+                            String(r.id) === String(u.role_id ?? u.role) ||
+                            r.name.toLowerCase() === String(u.role ?? '').toLowerCase(),
+                        )?.name ??
+                          u.role ??
                           u.role_id}
                       </Badge>
                     </Table.Td>
@@ -205,7 +221,29 @@ export function UsersTab({ roles }: UsersTabProps) {
                 )}
               </Table.Tbody>
             </Table>
-            <Pagination value={page} onChange={setPage} total={totalPages} size="sm" />
+            <Group justify="space-between" align="center">
+              <Button
+                variant="subtle"
+                size="sm"
+                leftSection={<ChevronLeft size={14} />}
+                onClick={goPrev}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </Button>
+              <Text size="sm" c="dimmed">
+                Page {currentPage}
+              </Text>
+              <Button
+                variant="subtle"
+                size="sm"
+                rightSection={<ChevronRight size={14} />}
+                onClick={goNext}
+                disabled={!nextCursor}
+              >
+                Next
+              </Button>
+            </Group>
           </>
         )}
       </Stack>
