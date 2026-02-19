@@ -2,10 +2,12 @@ import {
   ActionIcon,
   Anchor,
   AppShell,
+  Avatar,
+  Box,
   Breadcrumbs,
   Burger,
   Button,
-  ColorSwatch,
+  Divider,
   Drawer,
   Group,
   Indicator,
@@ -15,30 +17,24 @@ import {
   Stack,
   Text,
   TextInput,
-  Title,
   Tooltip,
-  useComputedColorScheme,
-  useMantineColorScheme,
+  UnstyledButton,
 } from '@mantine/core'
 import { useDisclosure, useDocumentTitle, useLocalStorage } from '@mantine/hooks'
 import {
   Bell,
-  Check,
   ChevronDown,
-  ChevronRight,
   HelpCircle,
   LayoutDashboard,
+  LayoutGrid,
   Library,
   LogOut,
-  Moon,
-  Palette,
   PanelLeftClose,
   PanelLeftOpen,
   Search,
+  Settings,
   Settings2,
   ShieldCheck,
-  Sun,
-  User,
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import {
@@ -49,12 +45,10 @@ import {
   useMatches,
 } from 'react-router-dom'
 import { useAuth } from '@/core/auth/AuthContext'
-import { ROLE_LABEL } from '@/core/auth/roles'
+import { buildRoleLabel } from '@/core/auth/roles'
 import type { Role } from '@/core/auth/types'
 import { env } from '@/core/config/env'
 import { useNotificationCenter } from '@/core/notifications/NotificationCenterContext'
-import { usePrimaryColorSettings } from '@/core/theme/PrimaryColorContext'
-import { PRIMARY_COLOR_PRESETS } from '@/core/theme/color-presets'
 import { useThemeTokens } from '@/core/theme/ThemeTokensContext'
 import { FontPicker } from '@/core/ui/FontPicker'
 import { ScrollToTop } from '@/core/ui/ScrollToTop'
@@ -131,25 +125,12 @@ export function AppShellLayout() {
     defaultValue: false,
     getInitialValueInEffect: true,
   })
-  const [openGroups, setOpenGroups] = useLocalStorage<Record<string, boolean>>({
-    key: 'reactbase.navbar.group-open',
-    defaultValue: {
-      workspace: true,
-      administration: true,
-    },
-    getInitialValueInEffect: true,
-  })
   const [onboardingCompleted, setOnboardingCompleted] = useLocalStorage({
     key: 'reactbase.onboarding.completed',
     defaultValue: false,
     getInitialValueInEffect: true,
   })
   const [coachmarkStep, setCoachmarkStep] = useState(0)
-  const { setColorScheme } = useMantineColorScheme()
-  const computedColorScheme = useComputedColorScheme('light', {
-    getInitialValueInEffect: true,
-  })
-  const { primaryColor, setPrimaryColor } = usePrimaryColorSettings()
   const { tokens, updateTokens, resetTokens } = useThemeTokens()
   const {
     items: notificationItems,
@@ -191,24 +172,15 @@ export function AppShellLayout() {
       : null
   const coachmarkTargetClass = (target: string) =>
     currentCoachmark?.target === target ? 'coachmark-target' : undefined
-  const visibleNavGroups = useMemo(
+  const visibleNavItems = useMemo(
     () =>
-      navGroups
-        .map((group) => ({
-          ...group,
-          items: group.items.filter((item) => !item.roles || auth.hasRole(item.roles)),
-        }))
-        .filter((group) => group.items.length > 0),
+      navGroups.flatMap((group) =>
+        group.items.filter((item) => !item.roles || auth.hasRole(item.roles)),
+      ),
     [auth],
   )
 
   useDocumentTitle(`${currentPageTitle} | ${tokens.brandName}`)
-
-  const toggleGroup = (groupId: string) =>
-    setOpenGroups((value) => ({
-      ...value,
-      [groupId]: !(value[groupId] ?? true),
-    }))
 
   const completeCoachmarks = () => {
     setOnboardingCompleted(true)
@@ -217,58 +189,61 @@ export function AppShellLayout() {
 
   return (
     <AppShell
+      layout="alt"
       header={{ height: 64 }}
       navbar={{
-        width: desktopCollapsed ? 80 : 280,
+        width: desktopCollapsed ? 72 : 240,
         breakpoint: 'sm',
         collapsed: { mobile: !opened },
       }}
       padding="md"
       styles={{
         header: {
-          backdropFilter: 'blur(12px)',
-          background: 'color-mix(in srgb, var(--mantine-color-body) 82%, transparent)',
+          backdropFilter: 'blur(10px)',
+          background: 'color-mix(in srgb, var(--mantine-color-body) 90%, transparent)',
+          borderBottom:
+            '1px solid color-mix(in srgb, var(--mantine-color-default-border) 50%, transparent)',
         },
         navbar: {
           transition: 'width 0.25s ease, min-width 0.25s ease',
+          borderRight:
+            '1px solid color-mix(in srgb, var(--mantine-color-default-border) 50%, transparent)',
         },
       }}
     >
       <Anchor href="#main-content" className="skip-link">
         Skip to main content
       </Anchor>
+
+      {/* ─── Header ─── */}
       <AppShell.Header component="header">
         <Group h="100%" px="md" justify="space-between">
-          <Group>
+          {/* Left: mobile burger + desktop collapse */}
+          <Group gap="xs">
             <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
-            <ActionIcon
+            <Tooltip
+              label={desktopCollapsed ? 'Expand navigation' : 'Collapse navigation'}
+              withArrow
               visibleFrom="sm"
-              variant="subtle"
-              aria-label={
-                desktopCollapsed
-                  ? 'Expand desktop navigation'
-                  : 'Collapse desktop navigation'
-              }
-              onClick={() => setDesktopCollapsed((value) => !value)}
             >
-              {desktopCollapsed ? (
-                <PanelLeftOpen size={18} />
-              ) : (
-                <PanelLeftClose size={18} />
-              )}
-            </ActionIcon>
-            <Anchor
-              component={RouterLink}
-              to="/"
-              style={{ textDecoration: 'none', color: 'inherit' }}
-              aria-label="Go to dashboard"
-            >
-              <Title order={4}>{tokens.brandName}</Title>
-            </Anchor>
-            <Text size="sm" c="dimmed" visibleFrom="sm">
-              {currentPageTitle}
-            </Text>
+              <ActionIcon
+                visibleFrom="sm"
+                variant="subtle"
+                aria-label={
+                  desktopCollapsed ? 'Expand navigation' : 'Collapse navigation'
+                }
+                onClick={() => setDesktopCollapsed((v) => !v)}
+              >
+                {desktopCollapsed ? (
+                  <PanelLeftOpen size={18} />
+                ) : (
+                  <PanelLeftClose size={18} />
+                )}
+              </ActionIcon>
+            </Tooltip>
           </Group>
+
+          {/* Center: search + command actions */}
           <Group
             flex={1}
             mx="md"
@@ -280,7 +255,7 @@ export function AppShellLayout() {
               aria-label="Quick search"
               placeholder={commandPlaceholder}
               leftSection={<Search size={14} />}
-              style={{ flex: 1, maxWidth: 420 }}
+              style={{ flex: 1, maxWidth: 480 }}
             />
             <Group gap="xs" wrap="nowrap">
               {commandActions.slice(0, 2).map((action) => (
@@ -300,8 +275,10 @@ export function AppShellLayout() {
               ))}
             </Group>
           </Group>
-          <Group className={coachmarkTargetClass('branding')}>
-            <Tooltip label="Open onboarding coachmarks" withArrow>
+
+          {/* Right: help + notifications + user profile */}
+          <Group gap="xs" className={coachmarkTargetClass('branding')}>
+            <Tooltip label="Open onboarding guide" withArrow>
               <ActionIcon
                 variant="subtle"
                 aria-label="Restart onboarding tour"
@@ -313,17 +290,8 @@ export function AppShellLayout() {
                 <HelpCircle size={18} />
               </ActionIcon>
             </Tooltip>
-            {themeTokenEditorEnabled && (
-              <Tooltip label="Open theme token editor" withArrow>
-                <ActionIcon
-                  variant="subtle"
-                  aria-label="Open theme token editor"
-                  onClick={tokensDrawerHandlers.open}
-                >
-                  <Settings2 size={18} />
-                </ActionIcon>
-              </Tooltip>
-            )}
+
+            {/* Notifications */}
             <Menu shadow="md" width={320} position="bottom-end">
               <Menu.Target>
                 <Indicator
@@ -372,172 +340,196 @@ export function AppShellLayout() {
                 )}
               </Menu.Dropdown>
             </Menu>
-            <Tooltip
-              label={
-                computedColorScheme === 'dark'
-                  ? 'Switch to light mode'
-                  : 'Switch to dark mode'
-              }
-              withArrow
-            >
-              <ActionIcon
-                variant="subtle"
-                aria-label={
-                  computedColorScheme === 'dark'
-                    ? 'Switch to light mode'
-                    : 'Switch to dark mode'
-                }
-                onClick={() =>
-                  setColorScheme(computedColorScheme === 'dark' ? 'light' : 'dark')
-                }
-              >
-                {computedColorScheme === 'dark' ? <Moon size={18} /> : <Sun size={18} />}
-              </ActionIcon>
-            </Tooltip>
-            <Menu shadow="md" width={220} position="bottom-end">
+
+            {/* User profile — consolidated settings + sign out */}
+            <Menu shadow="md" width={240} position="bottom-end">
               <Menu.Target>
-                <ActionIcon variant="subtle" aria-label="Select primary color preset">
-                  <Palette size={18} />
-                </ActionIcon>
-              </Menu.Target>
-              <Menu.Dropdown>
-                <Menu.Label>Color preset</Menu.Label>
-                {PRIMARY_COLOR_PRESETS.map((preset) => (
-                  <Menu.Item
-                    key={preset.value}
-                    leftSection={<ColorSwatch color={preset.previewColor} size={14} />}
-                    rightSection={
-                      primaryColor === preset.value ? (
-                        <Check size={14} aria-hidden />
-                      ) : null
-                    }
-                    onClick={() => setPrimaryColor(preset.value)}
-                  >
-                    {preset.label}
-                  </Menu.Item>
-                ))}
-              </Menu.Dropdown>
-            </Menu>
-            {auth.user && (
-              <Text size="sm" c="dimmed" visibleFrom="sm">
-                {auth.user.name} ({ROLE_LABEL[auth.user.role]})
-              </Text>
-            )}
-            <Menu shadow="md" width={220} position="bottom-end">
-              <Menu.Target>
-                <ActionIcon
-                  variant="subtle"
-                  aria-label="User menu"
-                  size="lg"
-                  hiddenFrom="sm"
-                >
-                  <User size={18} />
-                </ActionIcon>
+                <UnstyledButton className="user-profile-btn" aria-label="User menu">
+                  <Group gap="xs" wrap="nowrap">
+                    <Avatar size={32} radius="xl" color="primary">
+                      {auth.user?.name?.[0]?.toUpperCase() ?? 'U'}
+                    </Avatar>
+                    <Box visibleFrom="sm" style={{ lineHeight: 1, minWidth: 0 }}>
+                      <Text
+                        size="sm"
+                        fw={600}
+                        lh={1.3}
+                        style={{
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
+                        {auth.user?.name ?? 'Guest'}
+                      </Text>
+                      <Text size="xs" c="dimmed" lh={1.2}>
+                        {auth.user ? buildRoleLabel(auth.user.roleName) : ''}
+                      </Text>
+                    </Box>
+                    <ChevronDown
+                      size={14}
+                      style={{ color: 'var(--mantine-color-dimmed)', flexShrink: 0 }}
+                    />
+                  </Group>
+                </UnstyledButton>
               </Menu.Target>
               <Menu.Dropdown>
                 <Menu.Label>
                   {auth.user?.name}
                   <Text size="xs" c="dimmed">
-                    {auth.user && ROLE_LABEL[auth.user.role]}
+                    {auth.user && buildRoleLabel(auth.user.roleName)}
                   </Text>
                 </Menu.Label>
                 <Menu.Divider />
                 <Menu.Item
+                  leftSection={<Settings size={16} />}
+                  component={RouterLink}
+                  to="/settings"
+                >
+                  Settings
+                </Menu.Item>
+                <Menu.Divider />
+                <Menu.Item
                   leftSection={<LogOut size={16} />}
-                  onClick={auth.logout}
                   color="red"
+                  onClick={auth.logout}
                 >
                   Sign out
                 </Menu.Item>
               </Menu.Dropdown>
             </Menu>
-            <Tooltip label="Sign out" withArrow visibleFrom="sm">
-              <ActionIcon
-                variant="light"
-                color="red"
-                onClick={auth.logout}
-                aria-label="Sign out"
-                visibleFrom="sm"
-              >
-                <LogOut size={18} />
-              </ActionIcon>
-            </Tooltip>
           </Group>
         </Group>
       </AppShell.Header>
-      <AppShell.Navbar p="md" component="nav" aria-label="Primary">
-        <Stack gap="xs" align={desktopCollapsed ? 'center' : 'stretch'}>
-          {visibleNavGroups.map((group) => {
-            const isGroupOpen = openGroups[group.id] ?? true
-            return (
-              <Stack
-                key={group.id}
-                gap={4}
-                align={desktopCollapsed ? 'center' : 'stretch'}
-                className={
-                  group.id === 'workspace' ? coachmarkTargetClass('nav') : undefined
-                }
-              >
-                {!desktopCollapsed && (
-                  <Button
-                    variant="subtle"
-                    justify="space-between"
-                    onClick={() => toggleGroup(group.id)}
-                    rightSection={
-                      isGroupOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />
-                    }
+
+      {/* ─── Sidebar (full height via layout="alt") ─── */}
+      <AppShell.Navbar
+        component="nav"
+        aria-label="Primary"
+        style={{ display: 'flex', flexDirection: 'column', padding: 0 }}
+      >
+        {/* Brand logo */}
+        <Box
+          px={desktopCollapsed ? 0 : 'md'}
+          style={{
+            height: 64,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: desktopCollapsed ? 'center' : 'flex-start',
+            flexShrink: 0,
+          }}
+        >
+          <Anchor
+            component={RouterLink}
+            to="/"
+            style={{ textDecoration: 'none', color: 'inherit' }}
+            aria-label="Go to dashboard"
+          >
+            <Group gap="sm" align="center" wrap="nowrap">
+              <Box className="sidebar-brand-icon" aria-hidden>
+                <LayoutGrid size={16} />
+              </Box>
+              {!desktopCollapsed && (
+                <Box style={{ overflow: 'hidden', minWidth: 0 }}>
+                  <Text fw={700} size="sm" lh={1.2} style={{ whiteSpace: 'nowrap' }}>
+                    {tokens.brandName}
+                  </Text>
+                  <Text
+                    size="xs"
+                    c="dimmed"
+                    style={{
+                      letterSpacing: '0.06em',
+                      textTransform: 'uppercase',
+                      whiteSpace: 'nowrap',
+                    }}
                   >
-                    {group.label}
-                  </Button>
-                )}
-                {(desktopCollapsed || isGroupOpen) &&
-                  group.items.map((link) => (
-                    <Tooltip
-                      key={link.to}
-                      label={link.label}
-                      position="right"
-                      disabled={!desktopCollapsed}
-                      withArrow
-                    >
-                      <NavLink
-                        label={link.label}
-                        leftSection={<link.icon size={16} />}
-                        component={RouterNavLink}
-                        to={link.to}
-                        active={isActiveLink(link.to)}
-                        aria-label={link.label}
-                        styles={
-                          desktopCollapsed
-                            ? {
-                                root: {
-                                  width: 48,
-                                  justifyContent: 'center',
-                                  '&:focus-visible': {
-                                    outline:
-                                      '2px solid var(--mantine-primary-color-filled)',
-                                    outlineOffset: '2px',
-                                  },
-                                },
-                                label: { display: 'none' },
-                                section: { marginInlineEnd: 0 },
-                              }
-                            : {
-                                root: {
-                                  '&:focus-visible': {
-                                    outline:
-                                      '2px solid var(--mantine-primary-color-filled)',
-                                    outlineOffset: '2px',
-                                  },
-                                },
-                              }
+                    Owner Portal
+                  </Text>
+                </Box>
+              )}
+            </Group>
+          </Anchor>
+        </Box>
+
+        {/* Nav items */}
+        <Box
+          style={{ flex: 1, overflowY: 'auto' }}
+          px="xs"
+          py="xs"
+          className={coachmarkTargetClass('nav')}
+        >
+          <Stack gap={2} align={desktopCollapsed ? 'center' : 'stretch'}>
+            {visibleNavItems.map((link) => (
+              <Tooltip
+                key={link.to}
+                label={link.label}
+                position="right"
+                disabled={!desktopCollapsed}
+                withArrow
+              >
+                <NavLink
+                  label={link.label}
+                  leftSection={<link.icon size={16} />}
+                  component={RouterNavLink}
+                  to={link.to}
+                  active={isActiveLink(link.to)}
+                  aria-label={link.label}
+                  styles={
+                    desktopCollapsed
+                      ? {
+                          root: {
+                            width: 48,
+                            justifyContent: 'center',
+                            '&:focusVisible': {
+                              outline: '2px solid var(--mantine-primary-color-filled)',
+                              outlineOffset: '2px',
+                            },
+                          },
+                          label: { display: 'none' },
+                          section: { marginInlineEnd: 0 },
                         }
-                      />
-                    </Tooltip>
-                  ))}
-              </Stack>
-            )
-          })}
-        </Stack>
+                      : {
+                          root: {
+                            '&:focusVisible': {
+                              outline: '2px solid var(--mantine-primary-color-filled)',
+                              outlineOffset: '2px',
+                            },
+                          },
+                        }
+                  }
+                />
+              </Tooltip>
+            ))}
+          </Stack>
+        </Box>
+
+        {/* Logout pinned at bottom */}
+        <Divider opacity={0.4} />
+        <Box px="xs" py="xs">
+          <Tooltip
+            label="Sign out"
+            position="right"
+            disabled={!desktopCollapsed}
+            withArrow
+          >
+            <NavLink
+              label="Logout"
+              leftSection={<LogOut size={16} />}
+              onClick={auth.logout}
+              color="red"
+              aria-label="Sign out"
+              styles={
+                desktopCollapsed
+                  ? {
+                      root: { width: 48, justifyContent: 'center' },
+                      label: { display: 'none' },
+                      section: { marginInlineEnd: 0 },
+                    }
+                  : {}
+              }
+            />
+          </Tooltip>
+        </Box>
       </AppShell.Navbar>
       <AppShell.Main component="main" id="main-content" tabIndex={-1}>
         {breadcrumbItems.length > 0 && (

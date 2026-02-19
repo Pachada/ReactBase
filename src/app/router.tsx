@@ -29,6 +29,11 @@ const DashboardPage = lazy(() =>
     default: module.DashboardPage,
   })),
 )
+const SettingsPage = lazy(() =>
+  import('@/features/settings/SettingsPage').then((module) => ({
+    default: module.SettingsPage,
+  })),
+)
 const NotFoundPage = lazy(() =>
   import('@/pages/NotFoundPage').then((module) => ({ default: module.NotFoundPage })),
 )
@@ -91,6 +96,14 @@ export const router = createBrowserRouter([
             { label: 'Add component', variant: 'light' },
             { label: 'Open docs', variant: 'default' },
           ],
+        },
+      },
+      {
+        path: 'settings',
+        element: withSuspense(<SettingsPage />),
+        handle: {
+          breadcrumb: 'Settings',
+          title: 'Settings',
         },
       },
       {

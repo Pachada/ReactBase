@@ -1,10 +1,8 @@
 import {
-  Alert,
   Anchor,
   Button,
   Checkbox,
   PasswordInput,
-  Select,
   Stack,
   Text,
   TextInput,
@@ -12,19 +10,16 @@ import {
   useMantineColorScheme,
 } from '@mantine/core'
 import { Zap } from 'lucide-react'
-import { Controller, useForm } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/core/auth/AuthContext'
+import { ApiError } from '@/core/api/ApiError'
 import { useNotificationCenter } from '@/core/notifications/NotificationCenterContext'
-import { ErrorStateAlert } from '@/core/ui/ErrorStateAlert'
-import { ROLE_OPTIONS } from '@/core/auth/roles'
-import type { Role } from '@/core/auth/types'
 import { getRememberMePreference } from '@/core/auth/auth-storage'
 
 interface LoginFormValues {
   username: string
   password: string
-  role: Role
   rememberMe: boolean
 }
 
@@ -42,36 +37,32 @@ export function LoginPage() {
   const { colorScheme } = useMantineColorScheme()
   const state = (location.state as RouterState | null) ?? {}
   const redirectTo = state.from?.pathname ?? '/'
-  const { register, control, handleSubmit, formState, setError } =
-    useForm<LoginFormValues>({
-      defaultValues: {
-        username: '',
-        password: '',
-        role: 'viewer',
-        rememberMe: getRememberMePreference(),
-      },
-      mode: 'onBlur',
-    })
+  const { register, handleSubmit, formState, setError } = useForm<LoginFormValues>({
+    defaultValues: {
+      username: '',
+      password: '',
+      rememberMe: getRememberMePreference(),
+    },
+    mode: 'onBlur',
+  })
 
   const onSubmit = handleSubmit(async (values) => {
     try {
       await auth.login(values, values.rememberMe)
       addNotification({
         title: 'Welcome back',
-        message: `Signed in as ${values.role}`,
+        message: `Signed in successfully`,
         color: 'green',
       })
       navigate(redirectTo, { replace: true })
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : 'Unable to sign in right now. Please try again.'
-      addNotification({
-        title: 'Sign-in failed',
-        message,
-        color: 'red',
-      })
+      let message = 'Unable to sign in right now. Please try again.'
+      if (error instanceof ApiError) {
+        if (error.status === 401) {
+          message = 'Invalid username or password.'
+        }
+      }
+      addNotification({ title: 'Sign-in failed', message, color: 'red' })
       setError('root', { message })
     }
   })
@@ -100,12 +91,9 @@ export function LoginPage() {
               Welcome back
             </Title>
             <Text size="sm" c="dimmed">
-              Sign in to continue. Demo password is <b>changeme</b>.
+              Sign in to continue.
             </Text>
           </div>
-          <Alert color="blue" variant="light" radius="md">
-            Starter auth flow — replace with your API integration.
-          </Alert>
           <form onSubmit={onSubmit}>
             <Stack>
               <TextInput
@@ -117,7 +105,7 @@ export function LoginPage() {
               />
               <PasswordInput
                 label="Password"
-                placeholder="changeme"
+                placeholder="••••••••"
                 size="md"
                 {...register('password', { required: 'Password is required' })}
                 error={formState.errors.password?.message}
@@ -134,41 +122,10 @@ export function LoginPage() {
                   Forgot password?
                 </Anchor>
               </div>
-              <Controller
-                control={control}
-                name="role"
-                rules={{ required: 'Role is required' }}
-                render={({ field, fieldState }) => (
-                  <Select
-                    label="Role"
-                    data={ROLE_OPTIONS}
-                    size="md"
-                    value={field.value}
-                    onChange={(value) => field.onChange((value ?? 'viewer') as Role)}
-                    error={fieldState.error?.message}
-                  />
-                )}
-              />
               {formState.errors.root && (
-                <ErrorStateAlert
-                  title="Authentication error"
-                  message={
-                    formState.errors.root.message ?? 'Unable to sign in right now.'
-                  }
-                  actionLabel='Use demo password "changeme"'
-                  onAction={() => {
-                    const message = formState.errors.root?.message
-                    if (!message) {
-                      return
-                    }
-
-                    addNotification({
-                      title: 'Tip',
-                      message: 'Use password "changeme" and submit again.',
-                      color: 'blue',
-                    })
-                  }}
-                />
+                <Text size="sm" c="red">
+                  {formState.errors.root.message}
+                </Text>
               )}
               <Button type="submit" size="md" loading={formState.isSubmitting}>
                 Sign in

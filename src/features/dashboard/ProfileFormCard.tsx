@@ -12,9 +12,11 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
-import { ROLE_OPTIONS } from '@/core/auth/roles'
+import { useAuth } from '@/core/auth/AuthContext'
+import { buildRoleOptions } from '@/core/auth/roles'
 import { useNotificationCenter } from '@/core/notifications/NotificationCenterContext'
 import { ErrorStateAlert } from '@/core/ui/ErrorStateAlert'
+import { rolesApi } from '@/features/admin/roles-api'
 import {
   fetchProfile,
   updateProfile,
@@ -25,6 +27,7 @@ const PROFILE_QUERY_KEY = ['profile']
 
 export function ProfileFormCard() {
   const { addNotification } = useNotificationCenter()
+  const { token } = useAuth()
   const queryClient = useQueryClient()
   const [saveState, setSaveState] = useState<'idle' | 'success' | 'error'>('idle')
   const { register, control, handleSubmit, formState, reset } = useForm<Profile>({
@@ -35,6 +38,14 @@ export function ProfileFormCard() {
     },
     mode: 'onBlur',
   })
+
+  const rolesQuery = useQuery({
+    queryKey: ['roles'],
+    queryFn: () => rolesApi.listRoles(token ?? ''),
+    enabled: !!token,
+  })
+
+  const roleOptions = buildRoleOptions(rolesQuery.data ?? [])
 
   const profileQuery = useQuery({
     queryKey: PROFILE_QUERY_KEY,
@@ -121,6 +132,19 @@ export function ProfileFormCard() {
     )
   }
 
+  if (rolesQuery.isError) {
+    return (
+      <Card withBorder shadow="xs" radius="md">
+        <Stack>
+          <Title order={4}>Form foundation</Title>
+          <Alert color="red" title="Unable to load roles">
+            We could not load the list of roles. Please refresh the page to try again.
+          </Alert>
+        </Stack>
+      </Card>
+    )
+  }
+
   return (
     <Card withBorder shadow="xs" radius="md">
       <form onSubmit={onSubmit}>
@@ -152,7 +176,8 @@ export function ProfileFormCard() {
             render={({ field, fieldState }) => (
               <Select
                 label="Role"
-                data={ROLE_OPTIONS}
+                data={roleOptions}
+                disabled={rolesQuery.isLoading}
                 value={field.value}
                 onChange={(value) =>
                   field.onChange((value ?? 'viewer') as Profile['role'])

@@ -1,34 +1,39 @@
 import {
-  Alert,
   Anchor,
   Button,
   PasswordInput,
-  Select,
+  SimpleGrid,
   Stack,
   Text,
   TextInput,
   Title,
   useMantineColorScheme,
 } from '@mantine/core'
+import { DateInput } from '@mantine/dates'
+import 'dayjs/locale/en'
 import { Zap } from 'lucide-react'
-import { useEffect, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { Link, useNavigate } from 'react-router-dom'
+import { usersApi } from '@/features/admin/users-api'
+import { useAuth } from '@/core/auth/AuthContext'
+import { ApiError } from '@/core/api/ApiError'
 import { useNotificationCenter } from '@/core/notifications/NotificationCenterContext'
-import { ROLE_OPTIONS } from '@/core/auth/roles'
-import type { Role } from '@/core/auth/types'
+import { DATE_FORMAT, formatYMD, handleDateKeyDown } from '@/core/utils/date'
 
 interface SignUpFormValues {
   username: string
   email: string
+  phone: string
+  first_name: string
+  last_name: string
+  birthday: Date | null
   password: string
   confirmPassword: string
-  role: Role
 }
 
 export function SignUpPage() {
   const navigate = useNavigate()
-  const [shouldRedirectToLogin, setShouldRedirectToLogin] = useState(false)
+  const { loginWithEnvelope } = useAuth()
   const { addNotification } = useNotificationCenter()
   const { colorScheme } = useMantineColorScheme()
   const { register, control, handleSubmit, formState, setError } =
@@ -36,54 +41,66 @@ export function SignUpPage() {
       defaultValues: {
         username: '',
         email: '',
+        phone: '',
+        first_name: '',
+        last_name: '',
+        birthday: null,
         password: '',
         confirmPassword: '',
-        role: 'viewer',
       },
       mode: 'onBlur',
     })
 
-  useEffect(() => {
-    if (!shouldRedirectToLogin) {
-      return
-    }
-
-    const timer = setTimeout(() => {
-      navigate('/login', { replace: true })
-    }, 1500)
-
-    return () => clearTimeout(timer)
-  }, [navigate, shouldRedirectToLogin])
-
   const onSubmit = handleSubmit(async (values) => {
-    // Check password match
     if (values.password !== values.confirmPassword) {
       setError('confirmPassword', { message: 'Passwords do not match' })
       return
     }
 
+    const birthdayYMD =
+      values.birthday instanceof Date ? formatYMD(values.birthday) : undefined
+
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // In a real app, this would create an account via API
-      addNotification({
-        title: 'Account created',
-        message: `Welcome ${values.username}! Redirecting to sign in...`,
-        color: 'green',
+      const envelope = await usersApi.createUser({
+        username: values.username,
+        email: values.email,
+        phone: values.phone || undefined,
+        password: values.password,
+        first_name: values.first_name,
+        last_name: values.last_name,
+        birthday: birthdayYMD,
       })
 
-      setShouldRedirectToLogin(true)
+      if (envelope) {
+        const emailConfirmed = envelope.email_confirmed ?? envelope.user?.email_confirmed
+        if (emailConfirmed === false) {
+          addNotification({
+            title: 'Verify your email',
+            message:
+              'Your account has been created. Please verify your email address before signing in.',
+            color: 'blue',
+          })
+          navigate('/login', { replace: true })
+        } else {
+          await loginWithEnvelope(envelope)
+          addNotification({
+            title: 'Account created',
+            message: `Welcome ${values.username}!`,
+            color: 'green',
+          })
+          navigate('/', { replace: true })
+        }
+      }
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : 'Unable to create account. Please try again.'
-      addNotification({
-        title: 'Sign-up failed',
-        message,
-        color: 'red',
-      })
+      let message = 'Unable to create account. Please try again.'
+      if (error instanceof ApiError) {
+        if (error.status === 409) {
+          // Deliberately vague — avoid confirming whether username/email exists (enumeration)
+          message =
+            'An account with these details may already exist. Try signing in instead.'
+        }
+      }
+      addNotification({ title: 'Sign-up failed', message, color: 'red' })
       setError('root', { message })
     }
   })
@@ -112,13 +129,9 @@ export function SignUpPage() {
               Create account
             </Title>
             <Text size="sm" c="dimmed">
-              Sign up to get started with ReactBase
+              Sign up to get started
             </Text>
           </div>
-
-          <Alert color="blue" variant="light" radius="md">
-            Demo mode — Account won&apos;t actually be created
-          </Alert>
 
           <form onSubmit={onSubmit}>
             <Stack>
@@ -130,19 +143,73 @@ export function SignUpPage() {
                 error={formState.errors.username?.message}
               />
 
-              <TextInput
-                label="Email"
-                placeholder="alex@example.com"
-                size="md"
-                type="email"
-                {...register('email', {
-                  required: 'Email is required',
-                  pattern: {
-                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                    message: 'Invalid email address',
-                  },
-                })}
-                error={formState.errors.email?.message}
+              <SimpleGrid cols={2}>
+                <TextInput
+                  label="Email"
+                  placeholder="alex@example.com"
+                  size="md"
+                  type="email"
+                  {...register('email', {
+                    required: 'Email is required',
+                    pattern: {
+                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                      message: 'Invalid email address',
+                    },
+                  })}
+                  error={formState.errors.email?.message}
+                />
+                <TextInput
+                  label="Phone"
+                  placeholder="+1 555 000 0000"
+                  size="md"
+                  type="tel"
+                  {...register('phone', {
+                    validate: (value) => {
+                      if (!value || value.trim() === '') return true
+                      return (
+                        /^\+?(?=.*\d)[0-9\s\-().]{7,20}$/.test(value) ||
+                        'Please enter a valid phone number'
+                      )
+                    },
+                  })}
+                  error={formState.errors.phone?.message}
+                />
+              </SimpleGrid>
+
+              <SimpleGrid cols={2}>
+                <TextInput
+                  label="First name"
+                  placeholder="Alex"
+                  size="md"
+                  {...register('first_name', { required: 'First name is required' })}
+                  error={formState.errors.first_name?.message}
+                />
+                <TextInput
+                  label="Last name"
+                  placeholder="Smith"
+                  size="md"
+                  {...register('last_name', { required: 'Last name is required' })}
+                  error={formState.errors.last_name?.message}
+                />
+              </SimpleGrid>
+
+              <Controller
+                control={control}
+                name="birthday"
+                render={({ field }) => (
+                  <DateInput
+                    label="Birthday"
+                    placeholder={DATE_FORMAT}
+                    size="md"
+                    valueFormat={DATE_FORMAT}
+                    value={field.value}
+                    onChange={field.onChange}
+                    clearable
+                    popoverProps={{ withinPortal: true }}
+                    onKeyDown={handleDateKeyDown}
+                    maxDate={new Date()}
+                  />
+                )}
               />
 
               <PasswordInput
@@ -169,21 +236,11 @@ export function SignUpPage() {
                 error={formState.errors.confirmPassword?.message}
               />
 
-              <Controller
-                control={control}
-                name="role"
-                rules={{ required: 'Role is required' }}
-                render={({ field, fieldState }) => (
-                  <Select
-                    label="Role"
-                    data={ROLE_OPTIONS}
-                    size="md"
-                    value={field.value}
-                    onChange={(value) => field.onChange((value ?? 'viewer') as Role)}
-                    error={fieldState.error?.message}
-                  />
-                )}
-              />
+              {formState.errors.root && (
+                <Text size="sm" c="red">
+                  {formState.errors.root.message}
+                </Text>
+              )}
 
               <Button type="submit" size="md" loading={formState.isSubmitting} fullWidth>
                 Create account
