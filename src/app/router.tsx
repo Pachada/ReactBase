@@ -4,6 +4,7 @@ import { ErrorBoundary } from 'react-error-boundary'
 import { AppShellLayout } from '@/app/AppShellLayout'
 import { ProtectedRoute } from '@/app/routes/ProtectedRoute'
 import { ErrorPage } from '@/pages/ErrorPage'
+import { PageSkeleton } from '@/core/ui/SkeletonLoaders'
 
 const LoginPage = lazy(() =>
   import('@/features/auth/LoginPage').then((module) => ({ default: module.LoginPage })),
@@ -42,7 +43,7 @@ const NotFoundPage = lazy(() =>
 
 const withSuspense = (element: ReactElement) => (
   <ErrorBoundary FallbackComponent={ErrorPage}>
-    <Suspense fallback={null}>{element}</Suspense>
+    <Suspense fallback={<PageSkeleton />}>{element}</Suspense>
   </ErrorBoundary>
 )
 

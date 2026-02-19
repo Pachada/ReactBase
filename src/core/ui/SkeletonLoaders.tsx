@@ -1,4 +1,12 @@
-import { Card, Group, Skeleton, Stack } from '@mantine/core'
+import { Card, Center, Group, Loader, Skeleton, Stack } from '@mantine/core'
+
+export function PageSkeleton() {
+  return (
+    <Center mih="60vh">
+      <Loader size="md" />
+    </Center>
+  )
+}
 
 export function DashboardStatCardSkeleton() {
   return (
