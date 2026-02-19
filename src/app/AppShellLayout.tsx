@@ -7,7 +7,6 @@ import {
   Breadcrumbs,
   Burger,
   Button,
-  ColorSwatch,
   Divider,
   Drawer,
   Group,
@@ -20,26 +19,22 @@ import {
   TextInput,
   Tooltip,
   UnstyledButton,
-  useComputedColorScheme,
-  useMantineColorScheme,
 } from '@mantine/core'
 import { useDisclosure, useDocumentTitle, useLocalStorage } from '@mantine/hooks'
 import {
   Bell,
-  Check,
   ChevronDown,
   HelpCircle,
   LayoutDashboard,
   LayoutGrid,
   Library,
   LogOut,
-  Moon,
   PanelLeftClose,
   PanelLeftOpen,
   Search,
+  Settings,
   Settings2,
   ShieldCheck,
-  Sun,
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import {
@@ -54,8 +49,6 @@ import { buildRoleLabel } from '@/core/auth/roles'
 import type { Role } from '@/core/auth/types'
 import { env } from '@/core/config/env'
 import { useNotificationCenter } from '@/core/notifications/NotificationCenterContext'
-import { usePrimaryColorSettings } from '@/core/theme/PrimaryColorContext'
-import { PRIMARY_COLOR_PRESETS } from '@/core/theme/color-presets'
 import { useThemeTokens } from '@/core/theme/ThemeTokensContext'
 import { FontPicker } from '@/core/ui/FontPicker'
 import { ScrollToTop } from '@/core/ui/ScrollToTop'
@@ -138,11 +131,6 @@ export function AppShellLayout() {
     getInitialValueInEffect: true,
   })
   const [coachmarkStep, setCoachmarkStep] = useState(0)
-  const { setColorScheme } = useMantineColorScheme()
-  const computedColorScheme = useComputedColorScheme('light', {
-    getInitialValueInEffect: true,
-  })
-  const { primaryColor, setPrimaryColor } = usePrimaryColorSettings()
   const { tokens, updateTokens, resetTokens } = useThemeTokens()
   const {
     items: notificationItems,
@@ -393,45 +381,13 @@ export function AppShellLayout() {
                   </Text>
                 </Menu.Label>
                 <Menu.Divider />
-                <Menu.Label>Appearance</Menu.Label>
                 <Menu.Item
-                  leftSection={
-                    computedColorScheme === 'dark' ? (
-                      <Sun size={16} />
-                    ) : (
-                      <Moon size={16} />
-                    )
-                  }
-                  onClick={() =>
-                    setColorScheme(computedColorScheme === 'dark' ? 'light' : 'dark')
-                  }
+                  leftSection={<Settings size={16} />}
+                  component={RouterLink}
+                  to="/settings"
                 >
-                  {computedColorScheme === 'dark' ? 'Light mode' : 'Dark mode'}
+                  Settings
                 </Menu.Item>
-                {themeTokenEditorEnabled && (
-                  <Menu.Item
-                    leftSection={<Settings2 size={16} />}
-                    onClick={tokensDrawerHandlers.open}
-                  >
-                    Theme editor
-                  </Menu.Item>
-                )}
-                <Menu.Divider />
-                <Menu.Label>Color preset</Menu.Label>
-                {PRIMARY_COLOR_PRESETS.map((preset) => (
-                  <Menu.Item
-                    key={preset.value}
-                    leftSection={<ColorSwatch color={preset.previewColor} size={14} />}
-                    rightSection={
-                      primaryColor === preset.value ? (
-                        <Check size={14} aria-hidden />
-                      ) : null
-                    }
-                    onClick={() => setPrimaryColor(preset.value)}
-                  >
-                    {preset.label}
-                  </Menu.Item>
-                ))}
                 <Menu.Divider />
                 <Menu.Item
                   leftSection={<LogOut size={16} />}
@@ -524,7 +480,7 @@ export function AppShellLayout() {
                           root: {
                             width: 48,
                             justifyContent: 'center',
-                            '&:focus-visible': {
+                            '&:focusVisible': {
                               outline: '2px solid var(--mantine-primary-color-filled)',
                               outlineOffset: '2px',
                             },
@@ -534,7 +490,7 @@ export function AppShellLayout() {
                         }
                       : {
                           root: {
-                            '&:focus-visible': {
+                            '&:focusVisible': {
                               outline: '2px solid var(--mantine-primary-color-filled)',
                               outlineOffset: '2px',
                             },

@@ -10,6 +10,7 @@ export interface AuthEnvelope {
   access_token: string
   refresh_token: string
   session: ApiSession
+  user: ApiUser
 }
 
 export interface RefreshEnvelope {
@@ -19,6 +20,7 @@ export interface RefreshEnvelope {
 
 export interface SessionEnvelope {
   session: ApiSession
+  user?: ApiUser
   message?: string
   error?: string
 }
@@ -39,10 +41,24 @@ export interface DataUserEnvelope {
   role_id: number
   first_name: string
   last_name: string
-  birthday: string
+  birthday: string | null
   verified: boolean
   email_confirmed: boolean
   phone_confirmed: boolean
+}
+
+// ─── Go nullable field wrappers ───────────────────────────────────────────────
+
+/** Go's sql.NullString serialised to JSON */
+export interface NullString {
+  String: string
+  Valid: boolean
+}
+
+/** Go's sql.NullTime serialised to JSON */
+export interface NullTime {
+  Time: string
+  Valid: boolean
 }
 
 // ─── Models ──────────────────────────────────────────────────────────────────
@@ -58,7 +74,7 @@ export interface ApiUser {
   enable: boolean
   first_name: string
   last_name: string
-  birthday: string
+  birthday: string | null
   verified: boolean
   email_confirmed: boolean
   phone_confirmed: boolean
@@ -67,11 +83,10 @@ export interface ApiUser {
 export interface ApiSession {
   id: number
   user_id: number
-  device_id: number
+  device_id?: number
   created: string
   updated: string
   enable: boolean
-  user: ApiUser
 }
 
 export interface ApiRole {

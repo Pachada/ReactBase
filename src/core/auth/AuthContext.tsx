@@ -16,9 +16,11 @@ import {
   saveAuthState,
 } from '@/core/auth/auth-storage'
 import type { AuthState, AuthUser, LoginCredentials, Role } from '@/core/auth/types'
+import type { AuthEnvelope } from '@/core/api/types'
 
 interface AuthContextValue extends AuthState {
   login: (credentials: LoginCredentials, rememberMe?: boolean) => Promise<void>
+  loginWithEnvelope: (envelope: AuthEnvelope, rememberMe?: boolean) => Promise<void>
   logout: () => void
   hasRole: (roles: Role[]) => boolean
   // sessionExpiresAt kept for API compat (null — server manages sessions)
@@ -73,46 +75,58 @@ export function AuthProvider({ children }: PropsWithChildren) {
     }
   }, [authState.status, authState.refreshToken, doSilentRefresh])
 
-  const login = useCallback(async (credentials: LoginCredentials, rememberMe = false) => {
-    const envelope = await sessionApi.login(credentials)
-    if (!envelope?.access_token) throw new Error('Login failed: empty response')
+  const applyEnvelope = useCallback(
+    async (envelope: AuthEnvelope, rememberMe = false) => {
+      if (!envelope?.access_token) throw new Error('Login failed: empty response')
+      const { access_token, refresh_token, user: apiUser } = envelope
+      if (!apiUser) throw new Error('Login failed: missing user in response')
 
-    const { access_token, refresh_token, session } = envelope
-    if (!session?.user) throw new Error('Login failed: missing user in session')
+      let roleName = 'viewer'
+      try {
+        const roles = await rolesApi.listRoles(access_token)
+        const matched = roles.find((r) => r.id === apiUser.role_id)
+        if (matched) roleName = matched.name
+      } catch {
+        // non-fatal
+      }
 
-    const apiUser = session.user
+      const user: AuthUser = {
+        id: apiUser.id,
+        username: apiUser.username,
+        name:
+          `${apiUser.first_name ?? ''} ${apiUser.last_name ?? ''}`.trim() ||
+          apiUser.username,
+        email: apiUser.email,
+        role_id: apiUser.role_id,
+        roleName,
+      }
 
-    // Resolve role name from roles list
-    let roleName = 'viewer'
-    try {
-      const roles = await rolesApi.listRoles(access_token)
-      const matched = roles.find((r) => r.id === apiUser.role_id)
-      if (matched) roleName = matched.name
-    } catch {
-      // non-fatal — role display may be inaccurate but auth still works
-    }
+      const nextState: AuthState = {
+        user,
+        token: access_token,
+        refreshToken: refresh_token ?? null,
+        status: 'authenticated',
+      }
 
-    const user: AuthUser = {
-      id: apiUser.id,
-      username: apiUser.username,
-      name:
-        `${apiUser.first_name ?? ''} ${apiUser.last_name ?? ''}`.trim() ||
-        apiUser.username,
-      email: apiUser.email,
-      role_id: apiUser.role_id,
-      roleName,
-    }
+      saveAuthState(nextState, rememberMe)
+      setAuthState(nextState)
+    },
+    [],
+  )
 
-    const nextState: AuthState = {
-      user,
-      token: access_token,
-      refreshToken: refresh_token ?? null,
-      status: 'authenticated',
-    }
+  const login = useCallback(
+    async (credentials: LoginCredentials, rememberMe = false) => {
+      const envelope = await sessionApi.login(credentials)
+      if (!envelope) throw new Error('Login failed: empty response')
+      await applyEnvelope(envelope, rememberMe)
+    },
+    [applyEnvelope],
+  )
 
-    saveAuthState(nextState, rememberMe)
-    setAuthState(nextState)
-  }, [])
+  const loginWithEnvelope = useCallback(
+    (envelope: AuthEnvelope, rememberMe = false) => applyEnvelope(envelope, rememberMe),
+    [applyEnvelope],
+  )
 
   const logout = useCallback(() => {
     const token = authState.token
@@ -138,12 +152,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
     () => ({
       ...authState,
       login,
+      loginWithEnvelope,
       logout,
       hasRole,
       sessionExpiresAt: null,
       resetSessionTimer: () => {},
     }),
-    [authState, hasRole, login, logout],
+    [authState, hasRole, login, loginWithEnvelope, logout],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

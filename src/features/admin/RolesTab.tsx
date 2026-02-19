@@ -6,7 +6,6 @@ import {
   Loader,
   Modal,
   Stack,
-  Switch,
   Table,
   Text,
   TextInput,
@@ -22,7 +21,6 @@ import { rolesApi } from '@/features/admin/roles-api'
 
 interface RoleForm {
   name: string
-  enable: boolean
 }
 
 export function RolesTab() {
@@ -41,7 +39,7 @@ export function RolesTab() {
   })
 
   const { register, handleSubmit, formState, reset } = useForm<RoleForm>({
-    defaultValues: { name: '', enable: true },
+    defaultValues: { name: '' },
   })
 
   const createMutation = useMutation({
@@ -69,15 +67,24 @@ export function RolesTab() {
     },
   })
 
+  const toggleEnableMutation = useMutation({
+    mutationFn: ({ id, name, enable }: { id: number; name: string; enable: boolean }) =>
+      rolesApi.updateRole(id, { name, enable }, token),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['roles'] })
+      closeDelete()
+    },
+  })
+
   function handleCreate() {
     setEditTarget(null)
-    reset({ name: '', enable: true })
+    reset({ name: '' })
     openForm()
   }
 
   function handleEdit(role: ApiRole) {
     setEditTarget(role)
-    reset({ name: role.name, enable: role.enable })
+    reset({ name: role.name })
     openForm()
   }
 
@@ -171,7 +178,6 @@ export function RolesTab() {
               {...register('name', { required: 'Name is required' })}
               error={formState.errors.name?.message}
             />
-            <Switch label="Enabled" defaultChecked {...register('enable')} />
             <Button type="submit" loading={isSubmitting}>
               {editTarget ? 'Save changes' : 'Create role'}
             </Button>
@@ -179,14 +185,36 @@ export function RolesTab() {
         </form>
       </Modal>
 
-      <Modal opened={deleteOpened} onClose={closeDelete} title="Delete role" size="sm">
+      <Modal opened={deleteOpened} onClose={closeDelete} title="Manage role" size="sm">
         <Stack>
           <Text>
-            Are you sure you want to delete role <b>{deleteTarget?.name}</b>?
+            {deleteTarget?.enable ? (
+              <>
+                Disable role <b>{deleteTarget.name}</b>?
+              </>
+            ) : (
+              <>
+                Re-enable role <b>{deleteTarget?.name}</b>?
+              </>
+            )}
           </Text>
           <Group justify="flex-end">
             <Button variant="default" onClick={closeDelete}>
               Cancel
+            </Button>
+            <Button
+              color={deleteTarget?.enable ? 'orange' : 'green'}
+              loading={toggleEnableMutation.isPending}
+              onClick={() =>
+                deleteTarget &&
+                toggleEnableMutation.mutate({
+                  id: deleteTarget.id,
+                  name: deleteTarget.name,
+                  enable: !deleteTarget.enable,
+                })
+              }
+            >
+              {deleteTarget?.enable ? 'Disable' : 'Re-enable'}
             </Button>
             <Button
               color="red"

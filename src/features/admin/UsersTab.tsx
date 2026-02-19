@@ -8,7 +8,6 @@ import {
   Pagination,
   Select,
   Stack,
-  Switch,
   Table,
   Text,
   TextInput,
@@ -17,7 +16,7 @@ import { useDisclosure } from '@mantine/hooks'
 import { DateInput } from '@mantine/dates'
 import 'dayjs/locale/en'
 import { Pencil, Trash2 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/core/auth/AuthContext'
@@ -31,11 +30,26 @@ interface EditUserForm {
   last_name: string
   birthday: Date | null
   role_id: number
-  enable: boolean
 }
 
 interface UsersTabProps {
   roles: ApiRole[]
+}
+
+/** Parse a YYYY-MM-DD birthday string as a local date (no UTC shift) */
+function parseBirthday(raw: string | null | undefined): Date | null {
+  if (!raw) return null
+  const [y, m, d] = raw.split('-').map(Number)
+  if (!y || !m || !d) return null
+  return new Date(y, m - 1, d)
+}
+
+/** Format a Date as YYYY-MM-DD in local time */
+function formatYMD(d: Date): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
 }
 
 export function UsersTab({ roles }: UsersTabProps) {
@@ -76,19 +90,32 @@ export function UsersTab({ roles }: UsersTabProps) {
     },
   })
 
+  const toggleEnableMutation = useMutation({
+    mutationFn: ({ id, enable }: { id: number; enable: boolean }) =>
+      usersApi.updateUser(id, { enable }, token),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+      closeDelete()
+    },
+  })
+
   function handleEdit(user: ApiUser) {
     setEditTarget(user)
-    reset({
-      username: user.username,
-      email: user.email,
-      first_name: user.first_name ?? '',
-      last_name: user.last_name ?? '',
-      birthday: user.birthday ? new Date(user.birthday) : null,
-      role_id: user.role_id,
-      enable: user.enable ?? true,
-    })
     openEdit()
   }
+
+  useEffect(() => {
+    if (editOpened && editTarget) {
+      reset({
+        username: editTarget.username,
+        email: editTarget.email,
+        first_name: editTarget.first_name ?? '',
+        last_name: editTarget.last_name ?? '',
+        birthday: parseBirthday(editTarget.birthday),
+        role_id: editTarget.role_id,
+      })
+    }
+  }, [editOpened, editTarget, reset])
 
   function handleDelete(user: ApiUser) {
     setDeleteTarget(user)
@@ -97,18 +124,26 @@ export function UsersTab({ roles }: UsersTabProps) {
 
   const onEditSubmit = handleSubmit((values) => {
     if (!editTarget) return
-    updateMutation.mutate({
-      id: editTarget.id,
-      body: {
-        username: values.username,
-        email: values.email,
-        first_name: values.first_name,
-        last_name: values.last_name,
-        birthday: values.birthday?.toISOString(),
-        role_id: values.role_id,
-        enable: values.enable,
-      },
-    })
+    const body: UpdateUserRequest = {}
+    if (values.username !== editTarget.username) body.username = values.username
+    if (values.email !== editTarget.email) body.email = values.email
+    if (values.first_name !== (editTarget.first_name ?? ''))
+      body.first_name = values.first_name
+    if (values.last_name !== (editTarget.last_name ?? ''))
+      body.last_name = values.last_name
+    if (values.role_id !== editTarget.role_id) body.role_id = values.role_id
+
+    const originalBirthday = parseBirthday(editTarget.birthday)
+    const newBirthday = values.birthday ? new Date(values.birthday) : null
+    if ((originalBirthday?.getTime() ?? null) !== (newBirthday?.getTime() ?? null)) {
+      body.birthday = newBirthday ? formatYMD(newBirthday) : undefined
+    }
+
+    if (Object.keys(body).length === 0) {
+      closeEdit()
+      return
+    }
+    updateMutation.mutate({ id: editTarget.id, body })
   })
 
   const roleOptions = roles.map((r) => ({ value: String(r.id), label: r.name }))
@@ -210,6 +245,7 @@ export function UsersTab({ roles }: UsersTabProps) {
                   value={field.value}
                   onChange={field.onChange}
                   clearable
+                  popoverProps={{ withinPortal: true, zIndex: 400 }}
                 />
               )}
             />
@@ -225,17 +261,6 @@ export function UsersTab({ roles }: UsersTabProps) {
                 />
               )}
             />
-            <Controller
-              control={control}
-              name="enable"
-              render={({ field }) => (
-                <Switch
-                  label="Enabled"
-                  checked={field.value}
-                  onChange={(e) => field.onChange(e.currentTarget.checked)}
-                />
-              )}
-            />
             <Button type="submit" loading={updateMutation.isPending}>
               Save changes
             </Button>
@@ -243,16 +268,37 @@ export function UsersTab({ roles }: UsersTabProps) {
         </form>
       </Modal>
 
-      {/* Delete confirmation modal */}
-      <Modal opened={deleteOpened} onClose={closeDelete} title="Delete user" size="sm">
+      {/* Delete / toggle-enable modal */}
+      <Modal opened={deleteOpened} onClose={closeDelete} title="Manage user" size="sm">
         <Stack>
           <Text>
-            Are you sure you want to delete <b>{deleteTarget?.username}</b>? This action
-            cannot be undone.
+            {deleteTarget?.enable ? (
+              <>
+                Disable <b>{deleteTarget.username}</b>? They won&apos;t be able to log in
+                but their data is kept.
+              </>
+            ) : (
+              <>
+                Re-enable <b>{deleteTarget?.username}</b>?
+              </>
+            )}
           </Text>
           <Group justify="flex-end">
             <Button variant="default" onClick={closeDelete}>
               Cancel
+            </Button>
+            <Button
+              color={deleteTarget?.enable ? 'orange' : 'green'}
+              loading={toggleEnableMutation.isPending}
+              onClick={() =>
+                deleteTarget &&
+                toggleEnableMutation.mutate({
+                  id: deleteTarget.id,
+                  enable: !deleteTarget.enable,
+                })
+              }
+            >
+              {deleteTarget?.enable ? 'Disable' : 'Re-enable'}
             </Button>
             <Button
               color="red"

@@ -12,15 +12,17 @@ import {
 import { DateInput } from '@mantine/dates'
 import 'dayjs/locale/en'
 import { Zap } from 'lucide-react'
-import { useEffect, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { Link, useNavigate } from 'react-router-dom'
 import { usersApi } from '@/features/admin/users-api'
+import { useAuth } from '@/core/auth/AuthContext'
+import { ApiError } from '@/core/api/ApiError'
 import { useNotificationCenter } from '@/core/notifications/NotificationCenterContext'
 
 interface SignUpFormValues {
   username: string
   email: string
+  phone: string
   first_name: string
   last_name: string
   birthday: Date | null
@@ -30,7 +32,7 @@ interface SignUpFormValues {
 
 export function SignUpPage() {
   const navigate = useNavigate()
-  const [shouldRedirectToLogin, setShouldRedirectToLogin] = useState(false)
+  const { loginWithEnvelope } = useAuth()
   const { addNotification } = useNotificationCenter()
   const { colorScheme } = useMantineColorScheme()
   const { register, control, handleSubmit, formState, setError } =
@@ -38,6 +40,7 @@ export function SignUpPage() {
       defaultValues: {
         username: '',
         email: '',
+        phone: '',
         first_name: '',
         last_name: '',
         birthday: null,
@@ -47,39 +50,46 @@ export function SignUpPage() {
       mode: 'onBlur',
     })
 
-  useEffect(() => {
-    if (!shouldRedirectToLogin) return
-    const timer = setTimeout(() => navigate('/login', { replace: true }), 1500)
-    return () => clearTimeout(timer)
-  }, [navigate, shouldRedirectToLogin])
-
   const onSubmit = handleSubmit(async (values) => {
     if (values.password !== values.confirmPassword) {
       setError('confirmPassword', { message: 'Passwords do not match' })
       return
     }
 
+    const bd = values.birthday ? new Date(values.birthday) : null
+    const birthdayYMD = bd
+      ? `${bd.getFullYear()}-${String(bd.getMonth() + 1).padStart(2, '0')}-${String(bd.getDate()).padStart(2, '0')}`
+      : ''
+
     try {
-      await usersApi.createUser({
+      const envelope = await usersApi.createUser({
         username: values.username,
         email: values.email,
+        phone: values.phone || undefined,
         password: values.password,
         first_name: values.first_name,
         last_name: values.last_name,
-        birthday: values.birthday?.toISOString() ?? '',
+        birthday: birthdayYMD,
       })
 
-      addNotification({
-        title: 'Account created',
-        message: `Welcome ${values.username}! Redirecting to sign in...`,
-        color: 'green',
-      })
-      setShouldRedirectToLogin(true)
+      if (envelope) {
+        await loginWithEnvelope(envelope)
+        addNotification({
+          title: 'Account created',
+          message: `Welcome ${values.username}!`,
+          color: 'green',
+        })
+        navigate('/', { replace: true })
+      }
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : 'Unable to create account. Please try again.'
+      let message = 'Unable to create account. Please try again.'
+      if (error instanceof ApiError) {
+        if (error.status === 409) {
+          // Deliberately vague — avoid confirming whether username/email exists (enumeration)
+          message =
+            'An account with these details may already exist. Try signing in instead.'
+        }
+      }
       addNotification({ title: 'Sign-up failed', message, color: 'red' })
       setError('root', { message })
     }
@@ -123,20 +133,30 @@ export function SignUpPage() {
                 error={formState.errors.username?.message}
               />
 
-              <TextInput
-                label="Email"
-                placeholder="alex@example.com"
-                size="md"
-                type="email"
-                {...register('email', {
-                  required: 'Email is required',
-                  pattern: {
-                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                    message: 'Invalid email address',
-                  },
-                })}
-                error={formState.errors.email?.message}
-              />
+              <SimpleGrid cols={2}>
+                <TextInput
+                  label="Email"
+                  placeholder="alex@example.com"
+                  size="md"
+                  type="email"
+                  {...register('email', {
+                    required: 'Email is required',
+                    pattern: {
+                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                      message: 'Invalid email address',
+                    },
+                  })}
+                  error={formState.errors.email?.message}
+                />
+                <TextInput
+                  label="Phone"
+                  placeholder="+1 555 000 0000"
+                  size="md"
+                  type="tel"
+                  {...register('phone')}
+                  error={formState.errors.phone?.message}
+                />
+              </SimpleGrid>
 
               <SimpleGrid cols={2}>
                 <TextInput
@@ -167,6 +187,7 @@ export function SignUpPage() {
                     value={field.value}
                     onChange={field.onChange}
                     clearable
+                    popoverProps={{ withinPortal: true }}
                   />
                 )}
               />

@@ -1,6 +1,7 @@
 import { apiClient } from '@/core/api/http-client'
 import type {
   ApiUser,
+  AuthEnvelope,
   CreateUserRequest,
   DataUserEnvelope,
   PaginatedUsersEnvelope,
@@ -27,8 +28,8 @@ export const usersApi = {
     return apiClient.request<DataUserEnvelope>(`/v1/users/${id}`, { token })
   },
 
-  createUser(body: CreateUserRequest): Promise<ApiUser | undefined> {
-    return apiClient.request<ApiUser>('/v1/users', {
+  createUser(body: CreateUserRequest): Promise<AuthEnvelope | undefined> {
+    return apiClient.request<AuthEnvelope>('/v1/users', {
       method: 'POST',
       body,
     })

@@ -1,7 +1,9 @@
 import { apiClient } from '@/core/api/http-client'
 import type {
   AuthEnvelope,
+  ChangePasswordRequest,
   LoginRequest,
+  MessageEnvelope,
   RefreshEnvelope,
   RefreshRequest,
   SessionEnvelope,
@@ -31,5 +33,16 @@ export const sessionApi = {
 
   getSession(token: string): Promise<SessionEnvelope | undefined> {
     return apiClient.request<SessionEnvelope>('/v1/sessions', { token })
+  },
+
+  changePassword(
+    body: ChangePasswordRequest,
+    token: string,
+  ): Promise<MessageEnvelope | undefined> {
+    return apiClient.request<MessageEnvelope>('/v1/password-recovery/change-password', {
+      method: 'POST',
+      body,
+      token,
+    })
   },
 }
