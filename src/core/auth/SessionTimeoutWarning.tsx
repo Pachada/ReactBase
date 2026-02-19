@@ -6,12 +6,12 @@ import { useAuth } from './AuthContext'
 const WARNING_THRESHOLD_MS = 2 * 60 * 1000 // Show warning 2 minutes before expiry
 
 export function SessionTimeoutWarning() {
-  const auth = useAuth()
+  const { sessionExpiresAt, status, logout, resetSessionTimer } = useAuth()
   const [isWarningOpen, setIsWarningOpen] = useState(false)
   const [timeRemaining, setTimeRemaining] = useState(0)
 
   useEffect(() => {
-    const shouldShowWarning = auth.sessionExpiresAt && auth.status === 'authenticated'
+    const shouldShowWarning = sessionExpiresAt && status === 'authenticated'
 
     if (!shouldShowWarning) {
       // Use setTimeout to avoid setting state directly in effect
@@ -21,19 +21,18 @@ export function SessionTimeoutWarning() {
 
     const checkInterval = setInterval(() => {
       const now = Date.now()
-      const expiresAt = auth.sessionExpiresAt
 
-      if (!expiresAt) {
+      if (!sessionExpiresAt) {
         clearInterval(checkInterval)
         return
       }
 
-      const remaining = expiresAt - now
+      const remaining = sessionExpiresAt - now
 
       if (remaining <= 0) {
         // Session expired - logout
         clearInterval(checkInterval)
-        auth.logout()
+        logout()
         return
       }
 
@@ -46,15 +45,15 @@ export function SessionTimeoutWarning() {
     }, 1000)
 
     return () => clearInterval(checkInterval)
-  }, [auth, auth.sessionExpiresAt, auth.status])
+  }, [sessionExpiresAt, status, logout, resetSessionTimer])
 
   const handleStayLoggedIn = () => {
-    auth.resetSessionTimer()
+    resetSessionTimer()
     setIsWarningOpen(false)
   }
 
   const handleLogout = () => {
-    auth.logout()
+    logout()
     setIsWarningOpen(false)
   }
 

@@ -20,6 +20,22 @@ Use the /frontend-design skill to create a responsive navigation bar in React.
 
 ---
 
+### react-reviews
+
+**Purpose**: Review React codebases for modern (2026) best practices across architecture, state, performance, TypeScript, and security.
+
+**When to use**: Reviewing React code and suggesting improvements or refactors.
+
+**Usage**:
+
+```
+Use the /react-reviews skill to review the authentication flow in this React app.
+```
+
+**Location**: `.github/skills/react-reviews/SKILL.md`
+
+---
+
 ## Using Skills
 
 Copilot will automatically use relevant skills based on your prompt and the skill's description. To explicitly invoke a skill, prefix the skill name with a forward slash:

@@ -52,11 +52,13 @@ export function ForgotPasswordPage() {
       setEmail(values.email)
       setStep(1)
     } catch (error) {
-      let message = 'Could not send OTP. Please try again.'
+      // Always show a generic message to avoid leaking whether an email is registered
       if (error instanceof ApiError && error.status === 404) {
-        message = 'No account found with that email address.'
+        setEmail(values.email)
+        setStep(1)
+        return
       }
-      emailForm.setError('email', { message })
+      emailForm.setError('email', { message: 'Could not send OTP. Please try again.' })
     } finally {
       setIsLoading(false)
     }
