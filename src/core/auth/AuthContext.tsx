@@ -82,26 +82,24 @@ export function AuthProvider({ children }: PropsWithChildren) {
       if (!apiUser) throw new Error('Login failed: missing user in response')
 
       let roleName = 'viewer'
+      // NoSQL sends "role": "Admin"; SQL sends "role_id": 3 — handle both
+      const roleIdentifier = apiUser.role ?? apiUser.role_id
       try {
         const roles = await rolesApi.listRoles(access_token)
-        // SQL: role_id is a numeric FK → match by id
-        // NoSQL: role_id IS the name string → match by name (case-insensitive)
         const matched = roles.find(
           (r) =>
-            String(r.id) === String(apiUser.role_id) ||
-            r.name.toLowerCase() === String(apiUser.role_id).toLowerCase(),
+            String(r.id) === String(roleIdentifier) ||
+            r.name.toLowerCase() === String(roleIdentifier).toLowerCase(),
         )
         if (matched) {
           roleName = matched.name.toLowerCase()
-        } else if (typeof apiUser.role_id === 'string' && apiUser.role_id) {
-          // NoSQL: role_id not in list but is already the name
-          roleName = apiUser.role_id.toLowerCase()
+        } else if (roleIdentifier) {
+          // Identifier is already the name (NoSQL, roles list unavailable or unlisted)
+          roleName = String(roleIdentifier).toLowerCase()
         }
       } catch {
-        // non-fatal: if role_id is a string name (NoSQL), use it directly
-        if (typeof apiUser.role_id === 'string' && apiUser.role_id) {
-          roleName = apiUser.role_id.toLowerCase()
-        }
+        // non-fatal: use the identifier directly if it looks like a name
+        if (roleIdentifier) roleName = String(roleIdentifier).toLowerCase()
       }
 
       const user: AuthUser = {
@@ -111,7 +109,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
           `${apiUser.first_name ?? ''} ${apiUser.last_name ?? ''}`.trim() ||
           apiUser.username,
         email: apiUser.email,
-        role_id: apiUser.role_id,
+        role_id: roleIdentifier as AuthUser['role_id'],
         roleName,
       }
 
