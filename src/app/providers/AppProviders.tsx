@@ -99,7 +99,7 @@ function ThemedProviders({ children }: PropsWithChildren) {
       <PrimaryColorContext.Provider value={primaryColorContextValue}>
         <MantineProvider
           theme={theme}
-          defaultColorScheme="auto"
+          defaultColorScheme="light"
           colorSchemeManager={colorSchemeManager}
         >
           <QueryClientProvider client={queryClient}>
