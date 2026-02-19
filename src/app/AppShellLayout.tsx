@@ -1,57 +1,15 @@
-import {
-  ActionIcon,
-  Anchor,
-  AppShell,
-  Avatar,
-  Box,
-  Breadcrumbs,
-  Burger,
-  Button,
-  Divider,
-  Drawer,
-  Group,
-  Indicator,
-  Menu,
-  NavLink,
-  Select,
-  Stack,
-  Text,
-  TextInput,
-  Tooltip,
-  UnstyledButton,
-} from '@mantine/core'
+import { Anchor, AppShell, Breadcrumbs, Text } from '@mantine/core'
 import { useDisclosure, useDocumentTitle, useLocalStorage } from '@mantine/hooks'
-import {
-  Bell,
-  ChevronDown,
-  HelpCircle,
-  LayoutDashboard,
-  LayoutGrid,
-  Library,
-  LogOut,
-  PanelLeftClose,
-  PanelLeftOpen,
-  Search,
-  Settings,
-  Settings2,
-  ShieldCheck,
-} from 'lucide-react'
 import { useMemo, useState } from 'react'
-import {
-  Link as RouterLink,
-  NavLink as RouterNavLink,
-  Outlet,
-  useLocation,
-  useMatches,
-} from 'react-router-dom'
-import { useAuth } from '@/core/auth/AuthContext'
-import { buildRoleLabel } from '@/core/auth/roles'
-import type { Role } from '@/core/auth/types'
+import { Link as RouterLink, Outlet, useMatches } from 'react-router-dom'
 import { env } from '@/core/config/env'
-import { useNotificationCenter } from '@/core/notifications/NotificationCenterContext'
 import { useThemeTokens } from '@/core/theme/ThemeTokensContext'
-import { FontPicker } from '@/core/ui/FontPicker'
 import { ScrollToTop } from '@/core/ui/ScrollToTop'
+import { AppHeader } from './AppHeader'
+import { AppSidebar } from './AppSidebar'
+import { CoachmarkPanel } from './CoachmarkPanel'
+import { MobileBottomNav } from './MobileBottomNav'
+import { ThemeTokenDrawer } from './ThemeTokenDrawer'
 
 type AppRouteHandle = {
   breadcrumb?: string
@@ -62,35 +20,6 @@ type AppRouteHandle = {
     variant?: 'filled' | 'light' | 'default' | 'subtle'
   }>
 }
-
-type NavItem = {
-  to: string
-  label: string
-  icon: typeof LayoutDashboard
-  roles?: Role[]
-}
-
-type NavGroup = {
-  id: string
-  label: string
-  items: NavItem[]
-}
-
-const navGroups: NavGroup[] = [
-  {
-    id: 'workspace',
-    label: 'Workspace',
-    items: [
-      { to: '/', label: 'Dashboard', icon: LayoutDashboard },
-      { to: '/components', label: 'Components', icon: Library },
-    ],
-  },
-  {
-    id: 'administration',
-    label: 'Administration',
-    items: [{ to: '/admin', label: 'Admin', icon: ShieldCheck, roles: ['admin'] }],
-  },
-]
 
 const coachmarkSteps = [
   {
@@ -131,34 +60,20 @@ export function AppShellLayout() {
     getInitialValueInEffect: true,
   })
   const [coachmarkStep, setCoachmarkStep] = useState(0)
-  const { tokens, updateTokens, resetTokens } = useThemeTokens()
-  const {
-    items: notificationItems,
-    addNotification,
-    clearNotifications,
-  } = useNotificationCenter()
-  const auth = useAuth()
-  const location = useLocation()
+  const { tokens } = useThemeTokens()
   const matches = useMatches()
   const currentHandle = matches.at(-1)?.handle as AppRouteHandle | undefined
   const breadcrumbItems = matches
     .map((match) => {
       const handle = match.handle as AppRouteHandle | undefined
-      if (!handle?.breadcrumb) {
-        return null
-      }
-      return {
-        label: handle.breadcrumb,
-        path: match.pathname,
-      }
+      if (!handle?.breadcrumb) return null
+      return { label: handle.breadcrumb, path: match.pathname }
     })
     .filter((item): item is { label: string; path: string } => item !== null)
   const currentPageTitle = currentHandle?.title ?? 'Dashboard'
   const commandPlaceholder =
     currentHandle?.quickSearchPlaceholder ?? `Search ${currentPageTitle.toLowerCase()}`
   const commandActions = currentHandle?.actions ?? []
-  const isActiveLink = (to: string) =>
-    to === '/' ? location.pathname === '/' : location.pathname.startsWith(to)
   const activeCoachmarkSteps = useMemo(
     () =>
       themeTokenEditorEnabled
@@ -172,19 +87,23 @@ export function AppShellLayout() {
       : null
   const coachmarkTargetClass = (target: string) =>
     currentCoachmark?.target === target ? 'coachmark-target' : undefined
-  const visibleNavItems = useMemo(
-    () =>
-      navGroups.flatMap((group) =>
-        group.items.filter((item) => !item.roles || auth.hasRole(item.roles)),
-      ),
-    [auth],
-  )
 
   useDocumentTitle(`${currentPageTitle} | ${tokens.brandName}`)
 
+  const restartOnboarding = () => {
+    setOnboardingCompleted(false)
+    setCoachmarkStep(0)
+  }
   const completeCoachmarks = () => {
     setOnboardingCompleted(true)
     setCoachmarkStep(0)
+  }
+  const handleCoachmarkNext = () => {
+    if (coachmarkStep >= activeCoachmarkSteps.length - 1) {
+      completeCoachmarks()
+    } else {
+      setCoachmarkStep((v) => v + 1)
+    }
   }
 
   return (
@@ -215,322 +134,31 @@ export function AppShellLayout() {
         Skip to main content
       </Anchor>
 
-      {/* ─── Header ─── */}
       <AppShell.Header component="header">
-        <Group h="100%" px="md" justify="space-between">
-          {/* Left: mobile burger + desktop collapse */}
-          <Group gap="xs">
-            <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
-            <Tooltip
-              label={desktopCollapsed ? 'Expand navigation' : 'Collapse navigation'}
-              withArrow
-              visibleFrom="sm"
-            >
-              <ActionIcon
-                visibleFrom="sm"
-                variant="subtle"
-                aria-label={
-                  desktopCollapsed ? 'Expand navigation' : 'Collapse navigation'
-                }
-                onClick={() => setDesktopCollapsed((v) => !v)}
-              >
-                {desktopCollapsed ? (
-                  <PanelLeftOpen size={18} />
-                ) : (
-                  <PanelLeftClose size={18} />
-                )}
-              </ActionIcon>
-            </Tooltip>
-          </Group>
-
-          {/* Center: search + command actions */}
-          <Group
-            flex={1}
-            mx="md"
-            visibleFrom="md"
-            wrap="nowrap"
-            className={coachmarkTargetClass('commands')}
-          >
-            <TextInput
-              aria-label="Quick search"
-              placeholder={commandPlaceholder}
-              leftSection={<Search size={14} />}
-              style={{ flex: 1, maxWidth: 480 }}
-            />
-            <Group gap="xs" wrap="nowrap">
-              {commandActions.slice(0, 2).map((action) => (
-                <Button
-                  key={action.label}
-                  size="xs"
-                  variant={action.variant ?? 'default'}
-                  onClick={() =>
-                    addNotification({
-                      title: action.label,
-                      message: 'Command action slot placeholder.',
-                    })
-                  }
-                >
-                  {action.label}
-                </Button>
-              ))}
-            </Group>
-          </Group>
-
-          {/* Right: help + notifications + user profile */}
-          <Group gap="xs" className={coachmarkTargetClass('branding')}>
-            <Tooltip label="Open onboarding guide" withArrow>
-              <ActionIcon
-                variant="subtle"
-                aria-label="Restart onboarding tour"
-                onClick={() => {
-                  setOnboardingCompleted(false)
-                  setCoachmarkStep(0)
-                }}
-              >
-                <HelpCircle size={18} />
-              </ActionIcon>
-            </Tooltip>
-
-            {/* Notifications */}
-            <Menu shadow="md" width={320} position="bottom-end">
-              <Menu.Target>
-                <Indicator
-                  disabled={notificationItems.length === 0}
-                  inline
-                  label={notificationItems.length}
-                  size={16}
-                >
-                  <ActionIcon variant="subtle" aria-label="Open notification center">
-                    <Bell size={18} />
-                  </ActionIcon>
-                </Indicator>
-              </Menu.Target>
-              <Menu.Dropdown>
-                <Group justify="space-between" px="sm" py={6}>
-                  <Text size="sm" fw={600}>
-                    Notifications
-                  </Text>
-                  <Button
-                    size="compact-xs"
-                    variant="subtle"
-                    onClick={clearNotifications}
-                    disabled={notificationItems.length === 0}
-                  >
-                    Clear
-                  </Button>
-                </Group>
-                {notificationItems.length === 0 ? (
-                  <Menu.Label>No notifications yet</Menu.Label>
-                ) : (
-                  notificationItems.slice(0, 6).map((item) => (
-                    <Menu.Item key={item.id}>
-                      <Stack gap={2}>
-                        <Text size="sm" fw={600}>
-                          {item.title}
-                        </Text>
-                        <Text size="xs" c="dimmed">
-                          {item.message}
-                        </Text>
-                        <Text size="xs" c="dimmed">
-                          {new Date(item.createdAt).toLocaleTimeString()}
-                        </Text>
-                      </Stack>
-                    </Menu.Item>
-                  ))
-                )}
-              </Menu.Dropdown>
-            </Menu>
-
-            {/* User profile — consolidated settings + sign out */}
-            <Menu shadow="md" width={240} position="bottom-end">
-              <Menu.Target>
-                <UnstyledButton className="user-profile-btn" aria-label="User menu">
-                  <Group gap="xs" wrap="nowrap">
-                    <Avatar size={32} radius="xl" color="primary">
-                      {auth.user?.name?.[0]?.toUpperCase() ?? 'U'}
-                    </Avatar>
-                    <Box visibleFrom="sm" style={{ lineHeight: 1, minWidth: 0 }}>
-                      <Text
-                        size="sm"
-                        fw={600}
-                        lh={1.3}
-                        style={{
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                        }}
-                      >
-                        {auth.user?.name ?? 'Guest'}
-                      </Text>
-                      <Text size="xs" c="dimmed" lh={1.2}>
-                        {auth.user ? buildRoleLabel(auth.user.roleName) : ''}
-                      </Text>
-                    </Box>
-                    <ChevronDown
-                      size={14}
-                      style={{ color: 'var(--mantine-color-dimmed)', flexShrink: 0 }}
-                    />
-                  </Group>
-                </UnstyledButton>
-              </Menu.Target>
-              <Menu.Dropdown>
-                <Menu.Label>
-                  {auth.user?.name}
-                  <Text size="xs" c="dimmed">
-                    {auth.user && buildRoleLabel(auth.user.roleName)}
-                  </Text>
-                </Menu.Label>
-                <Menu.Divider />
-                <Menu.Item
-                  leftSection={<Settings size={16} />}
-                  component={RouterLink}
-                  to="/settings"
-                >
-                  Settings
-                </Menu.Item>
-                <Menu.Divider />
-                <Menu.Item
-                  leftSection={<LogOut size={16} />}
-                  color="red"
-                  onClick={auth.logout}
-                >
-                  Sign out
-                </Menu.Item>
-              </Menu.Dropdown>
-            </Menu>
-          </Group>
-        </Group>
+        <AppHeader
+          opened={opened}
+          onToggle={toggle}
+          desktopCollapsed={desktopCollapsed ?? false}
+          onToggleDesktopCollapsed={() => setDesktopCollapsed((v) => !v)}
+          commandPlaceholder={commandPlaceholder}
+          commandActions={commandActions}
+          onRestartOnboarding={restartOnboarding}
+          coachmarkCommandsClass={coachmarkTargetClass('commands')}
+          coachmarkBrandingClass={coachmarkTargetClass('branding')}
+        />
       </AppShell.Header>
 
-      {/* ─── Sidebar (full height via layout="alt") ─── */}
       <AppShell.Navbar
         component="nav"
         aria-label="Primary"
         style={{ display: 'flex', flexDirection: 'column', padding: 0 }}
       >
-        {/* Brand logo */}
-        <Box
-          px={desktopCollapsed ? 0 : 'md'}
-          style={{
-            height: 64,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: desktopCollapsed ? 'center' : 'flex-start',
-            flexShrink: 0,
-          }}
-        >
-          <Anchor
-            component={RouterLink}
-            to="/"
-            style={{ textDecoration: 'none', color: 'inherit' }}
-            aria-label="Go to dashboard"
-          >
-            <Group gap="sm" align="center" wrap="nowrap">
-              <Box className="sidebar-brand-icon" aria-hidden>
-                <LayoutGrid size={16} />
-              </Box>
-              {!desktopCollapsed && (
-                <Box style={{ overflow: 'hidden', minWidth: 0 }}>
-                  <Text fw={700} size="sm" lh={1.2} style={{ whiteSpace: 'nowrap' }}>
-                    {tokens.brandName}
-                  </Text>
-                  <Text
-                    size="xs"
-                    c="dimmed"
-                    style={{
-                      letterSpacing: '0.06em',
-                      textTransform: 'uppercase',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    Owner Portal
-                  </Text>
-                </Box>
-              )}
-            </Group>
-          </Anchor>
-        </Box>
-
-        {/* Nav items */}
-        <Box
-          style={{ flex: 1, overflowY: 'auto' }}
-          px="xs"
-          py="xs"
-          className={coachmarkTargetClass('nav')}
-        >
-          <Stack gap={2} align={desktopCollapsed ? 'center' : 'stretch'}>
-            {visibleNavItems.map((link) => (
-              <Tooltip
-                key={link.to}
-                label={link.label}
-                position="right"
-                disabled={!desktopCollapsed}
-                withArrow
-              >
-                <NavLink
-                  label={link.label}
-                  leftSection={<link.icon size={16} />}
-                  component={RouterNavLink}
-                  to={link.to}
-                  active={isActiveLink(link.to)}
-                  aria-label={link.label}
-                  styles={
-                    desktopCollapsed
-                      ? {
-                          root: {
-                            width: 48,
-                            justifyContent: 'center',
-                            '&:focusVisible': {
-                              outline: '2px solid var(--mantine-primary-color-filled)',
-                              outlineOffset: '2px',
-                            },
-                          },
-                          label: { display: 'none' },
-                          section: { marginInlineEnd: 0 },
-                        }
-                      : {
-                          root: {
-                            '&:focusVisible': {
-                              outline: '2px solid var(--mantine-primary-color-filled)',
-                              outlineOffset: '2px',
-                            },
-                          },
-                        }
-                  }
-                />
-              </Tooltip>
-            ))}
-          </Stack>
-        </Box>
-
-        {/* Logout pinned at bottom */}
-        <Divider opacity={0.4} />
-        <Box px="xs" py="xs">
-          <Tooltip
-            label="Sign out"
-            position="right"
-            disabled={!desktopCollapsed}
-            withArrow
-          >
-            <NavLink
-              label="Logout"
-              leftSection={<LogOut size={16} />}
-              onClick={auth.logout}
-              color="red"
-              aria-label="Sign out"
-              styles={
-                desktopCollapsed
-                  ? {
-                      root: { width: 48, justifyContent: 'center' },
-                      label: { display: 'none' },
-                      section: { marginInlineEnd: 0 },
-                    }
-                  : {}
-              }
-            />
-          </Tooltip>
-        </Box>
+        <AppSidebar
+          desktopCollapsed={desktopCollapsed ?? false}
+          coachmarkNavClass={coachmarkTargetClass('nav')}
+        />
       </AppShell.Navbar>
+
       <AppShell.Main component="main" id="main-content" tabIndex={-1}>
         {breadcrumbItems.length > 0 && (
           <Breadcrumbs mb="sm">
@@ -551,145 +179,26 @@ export function AppShellLayout() {
       </AppShell.Main>
 
       {themeTokenEditorEnabled && (
-        <Drawer
+        <ThemeTokenDrawer
           opened={tokensDrawerOpened}
           onClose={tokensDrawerHandlers.close}
-          title="Theme token editor"
-          position="right"
-        >
-          <Stack>
-            <Text size="sm" c="dimmed">
-              Configure white-label tokens for this workspace.
-            </Text>
-            <TextInput
-              label="Brand name"
-              value={tokens.brandName}
-              onChange={(event) => updateTokens({ brandName: event.currentTarget.value })}
-            />
-            <Select
-              label="Radius scale"
-              value={tokens.radius}
-              onChange={(value) =>
-                updateTokens({
-                  radius: (value as 'sm' | 'md' | 'lg' | 'xl') ?? tokens.radius,
-                })
-              }
-              data={[
-                { value: 'sm', label: 'Small' },
-                { value: 'md', label: 'Medium' },
-                { value: 'lg', label: 'Large' },
-                { value: 'xl', label: 'Extra large' },
-              ]}
-            />
-            <FontPicker
-              value={tokens.fontFamily}
-              onChange={(value) => updateTokens({ fontFamily: value })}
-            />
-            <Select
-              label="Notification position"
-              value={tokens.notificationPosition}
-              onChange={(value) =>
-                updateTokens({
-                  notificationPosition:
-                    (value as 'top-right' | 'bottom-right' | 'bottom-center') ??
-                    tokens.notificationPosition,
-                })
-              }
-              data={[
-                { value: 'top-right', label: 'Top Right' },
-                { value: 'bottom-right', label: 'Bottom Right' },
-                { value: 'bottom-center', label: 'Bottom Center' },
-              ]}
-            />
-            <Group justify="space-between">
-              <Button variant="subtle" onClick={resetTokens}>
-                Reset defaults
-              </Button>
-              <Button onClick={tokensDrawerHandlers.close}>Done</Button>
-            </Group>
-          </Stack>
-        </Drawer>
+        />
       )}
 
       {currentCoachmark && (
-        <div className="coachmark-panel" role="dialog" aria-live="polite">
-          <Stack gap={6}>
-            <Text size="sm" fw={600}>
-              {currentCoachmark.title}
-            </Text>
-            <Text size="sm" c="dimmed">
-              {currentCoachmark.description}
-            </Text>
-            <Group justify="space-between" mt={4}>
-              <Button
-                size="compact-xs"
-                variant="subtle"
-                onClick={() => setCoachmarkStep((value) => Math.max(0, value - 1))}
-                disabled={coachmarkStep === 0}
-              >
-                Back
-              </Button>
-              <Group gap={6}>
-                <Button size="compact-xs" variant="default" onClick={completeCoachmarks}>
-                  Skip
-                </Button>
-                <Button
-                  size="compact-xs"
-                  onClick={() =>
-                    coachmarkStep >= activeCoachmarkSteps.length - 1
-                      ? completeCoachmarks()
-                      : setCoachmarkStep((value) => value + 1)
-                  }
-                >
-                  {coachmarkStep >= activeCoachmarkSteps.length - 1 ? 'Finish' : 'Next'}
-                </Button>
-              </Group>
-            </Group>
-          </Stack>
-        </div>
+        <CoachmarkPanel
+          title={currentCoachmark.title}
+          description={currentCoachmark.description}
+          step={coachmarkStep}
+          totalSteps={activeCoachmarkSteps.length}
+          onNext={handleCoachmarkNext}
+          onBack={() => setCoachmarkStep((v) => Math.max(0, v - 1))}
+          onComplete={completeCoachmarks}
+        />
       )}
 
-      {/* Mobile bottom navigation */}
-      <nav className="mobile-bottom-nav" aria-label="Mobile navigation">
-        <div className="mobile-bottom-nav-inner">
-          <RouterLink
-            to="/"
-            className={`mobile-nav-item ${isActiveLink('/') ? 'active' : ''}`}
-          >
-            <LayoutDashboard />
-            <span>Dashboard</span>
-          </RouterLink>
-          <RouterLink
-            to="/components"
-            className={`mobile-nav-item ${isActiveLink('/components') ? 'active' : ''}`}
-          >
-            <Library />
-            <span>Components</span>
-          </RouterLink>
-          {auth.hasRole(['admin']) && (
-            <RouterLink
-              to="/admin"
-              className={`mobile-nav-item ${isActiveLink('/admin') ? 'active' : ''}`}
-            >
-              <ShieldCheck />
-              <span>Admin</span>
-            </RouterLink>
-          )}
-          {themeTokenEditorEnabled && (
-            <button
-              type="button"
-              className="mobile-nav-item"
-              onClick={tokensDrawerHandlers.open}
-              aria-label="Settings"
-            >
-              <Settings2 />
-              <span>Settings</span>
-            </button>
-          )}
-        </div>
-      </nav>
+      <MobileBottomNav onOpenThemeDrawer={tokensDrawerHandlers.open} />
 
-      {/* Scroll to top button */}
       <ScrollToTop />
     </AppShell>
   )
