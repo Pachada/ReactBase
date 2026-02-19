@@ -15,6 +15,10 @@ export const rolesApi = {
     const raw = Array.isArray(res) ? res : (res.data ?? [])
     // Normalize: NoSQL returns string[] e.g. ["Admin","User"]
     //            SQL returns ApiRole[] e.g. [{id:1, name:"admin", enable:true}]
+    // Note: for string items we synthesize an ApiRole using the role name as both `id`
+    //       and `name`. This means NoSQL-backed roles use string IDs while SQL-backed
+    //       roles use numeric IDs. Treat `id` as an opaque identifier — do not compare
+    //       IDs across different backend types.
     return raw.map((item) =>
       typeof item === 'string' ? { id: item, name: item, enable: true } : item,
     )

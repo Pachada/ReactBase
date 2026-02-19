@@ -16,6 +16,8 @@ export interface AuthEnvelope {
   refresh_token: string
   session: ApiSession
   user: ApiUser
+  /** Present when the backend requires email verification before login */
+  email_confirmed?: boolean
 }
 
 export interface RefreshEnvelope {
@@ -142,7 +144,7 @@ export interface CreateUserRequest {
   phone?: string
   first_name: string
   last_name: string
-  birthday: string
+  birthday?: string
   device_uuid?: string
 }
 

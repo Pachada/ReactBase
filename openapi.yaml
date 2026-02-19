@@ -1000,6 +1000,7 @@ components:
           type: string
           enum: [Admin, User]
           description: "Available roles: Admin, User"
+        first_name:
           type: string
         last_name:
           type: string

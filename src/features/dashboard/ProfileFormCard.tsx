@@ -132,6 +132,19 @@ export function ProfileFormCard() {
     )
   }
 
+  if (rolesQuery.isError) {
+    return (
+      <Card withBorder shadow="xs" radius="md">
+        <Stack>
+          <Title order={4}>Form foundation</Title>
+          <Alert color="red" title="Unable to load roles">
+            We could not load the list of roles. Please refresh the page to try again.
+          </Alert>
+        </Stack>
+      </Card>
+    )
+  }
+
   return (
     <Card withBorder shadow="xs" radius="md">
       <form onSubmit={onSubmit}>

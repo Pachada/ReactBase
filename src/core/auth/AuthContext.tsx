@@ -99,7 +99,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
           if (!/^\d+$/.test(identifierStr.trim())) roleName = identifierStr.toLowerCase()
         }
       } catch {
-        // non-fatal: only treat non-numeric identifiers as role names
+        // non-fatal: fallback mirrors the else branch above — intentionally duplicated
+        // here so that a roles API failure still resolves a NoSQL string role name.
         if (roleIdentifier) {
           const identifierStr = String(roleIdentifier)
           if (!/^\d+$/.test(identifierStr.trim())) roleName = identifierStr.toLowerCase()

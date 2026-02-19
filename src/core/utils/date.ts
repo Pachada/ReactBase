@@ -3,7 +3,12 @@ import type React from 'react'
 /** Standard display format across the app */
 export const DATE_FORMAT = 'DD/MM/YYYY'
 
-/** Auto-inserts '/' after DD and MM while typing (DD/MM/YYYY) */
+/** Auto-inserts '/' after DD and MM while typing (DD/MM/YYYY).
+ * NOTE: Uses Object.getOwnPropertyDescriptor to bypass React's synthetic event
+ * system. This is intentionally low-level to make Mantine's DateInput accept the
+ * injected slash without losing focus. Be aware this may need updating if React's
+ * internal input handling changes in a future major version.
+ */
 export function handleDateKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
   if (!/^\d$/.test(e.key)) return
   const input = e.target as HTMLInputElement
@@ -20,7 +25,11 @@ export function handleDateKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
   }
 }
 
-/** Parse a YYYY-MM-DD string as a local Date (avoids UTC midnight shift) */
+/** Parse a YYYY-MM-DD string as a local Date (avoids UTC midnight shift).
+ * Validates format, numeric ranges, and calendar rollover (e.g. Feb 30 → null).
+ * Range validation (future dates, max age) is the caller's responsibility —
+ * enforce it via maxDate/minDate on the DateInput component.
+ */
 export function parseBirthday(raw: string | null | undefined): Date | null {
   if (!raw || !/^\d{4}-\d{2}-\d{2}$/.test(raw)) return null
   const [yStr, mStr, dStr] = raw.split('-')

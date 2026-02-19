@@ -72,6 +72,8 @@ export function ForgotPasswordPage() {
       )
       // NOTE: The access_token returned here is a temporary reset token.
       // The backend must scope it to password-reset only and enforce a short TTL (5–10 min).
+      // Do NOT persist this token in localStorage or auth state — it should only be held
+      // in component state for the duration of the password-reset flow.
       if (!envelope?.access_token) throw new Error('Invalid code')
       setTempToken(envelope.access_token)
       setStep(2)

@@ -19,6 +19,7 @@ export class HttpClient {
   private refreshHandler: RefreshHandler | null = null
   private logoutHandler: LogoutHandler | null = null
   private refreshPromise: Promise<string | null> | null = null
+  private logoutTriggered = false
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl
@@ -30,6 +31,7 @@ export class HttpClient {
 
   setLogoutHandler(handler: LogoutHandler): void {
     this.logoutHandler = handler
+    this.logoutTriggered = false
   }
 
   async request<TResponse>(
@@ -55,7 +57,11 @@ export class HttpClient {
         })
         return this.parseResponse<TResponse>(retryResponse)
       }
-      this.logoutHandler?.()
+      // Guard against multiple concurrent 401s each triggering logout
+      if (!this.logoutTriggered) {
+        this.logoutTriggered = true
+        this.logoutHandler?.()
+      }
       throw new ApiError('Session expired', 401)
     }
 

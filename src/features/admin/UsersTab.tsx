@@ -306,8 +306,8 @@ export function UsersTab({ roles }: UsersTabProps) {
                 <Select
                   label="Role"
                   data={roleOptions}
-                  value={String(field.value)}
-                  onChange={(v) => field.onChange(Number(v))}
+                  value={field.value != null ? String(field.value) : null}
+                  onChange={(v) => field.onChange(v as EntityId)}
                 />
               )}
             />

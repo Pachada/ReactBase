@@ -75,13 +75,16 @@ interface ChangePasswordForm {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function getInitials(name: string): string {
-  return name
-    .split(' ')
+  const trimmed = name.trim()
+  if (!trimmed) return '?'
+  const initials = trimmed
+    .split(/\s+/)
     .map((n) => n[0])
     .filter(Boolean)
     .join('')
     .toUpperCase()
     .slice(0, 2)
+  return initials || '?'
 }
 
 // ─── Read-only info row ───────────────────────────────────────────────────────
@@ -360,6 +363,7 @@ function ProfileSection() {
           <Avatar
             size={72}
             radius="xl"
+            aria-label={`${displayName} avatar`}
             style={{
               border: '3px solid rgba(255,255,255,0.6)',
               boxShadow: '0 4px 20px rgba(0,0,0,0.3)',

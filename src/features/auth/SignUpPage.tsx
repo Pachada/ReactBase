@@ -57,7 +57,8 @@ export function SignUpPage() {
       return
     }
 
-    const birthdayYMD = values.birthday instanceof Date ? formatYMD(values.birthday) : ''
+    const birthdayYMD =
+      values.birthday instanceof Date ? formatYMD(values.birthday) : undefined
 
     try {
       const envelope = await usersApi.createUser({
@@ -71,10 +72,7 @@ export function SignUpPage() {
       })
 
       if (envelope) {
-        const envelopeAny = envelope as unknown as Record<string, unknown>
-        const emailConfirmed =
-          envelopeAny.email_confirmed ??
-          (envelopeAny.user as Record<string, unknown> | undefined)?.email_confirmed
+        const emailConfirmed = envelope.email_confirmed ?? envelope.user?.email_confirmed
         if (emailConfirmed === false) {
           addNotification({
             title: 'Verify your email',
@@ -169,7 +167,7 @@ export function SignUpPage() {
                     validate: (value) => {
                       if (!value || value.trim() === '') return true
                       return (
-                        /^\+?[0-9\s\-().]{7,20}$/.test(value) ||
+                        /^\+?(?=.*\d)[0-9\s\-().]{7,20}$/.test(value) ||
                         'Please enter a valid phone number'
                       )
                     },
