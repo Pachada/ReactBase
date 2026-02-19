@@ -133,10 +133,7 @@ export function ProfileSection() {
     if (values.last_name !== userData.last_name) body.last_name = values.last_name
     if (values.username !== userData.username) body.username = values.username
     const originalBirthday = userData.birthday ?? null
-    const newBirthday =
-      values.birthday instanceof Date
-        ? values.birthday
-        : parseBirthday(values.birthday as unknown as string)
+    const newBirthday = values.birthday instanceof Date ? values.birthday : null
     if (newBirthday) {
       const formatted = formatYMD(newBirthday)
       if (formatted !== originalBirthday) body.birthday = formatted

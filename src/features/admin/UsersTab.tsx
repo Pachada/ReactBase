@@ -140,10 +140,7 @@ export function UsersTab({ roles }: UsersTabProps) {
     if (values.role_id !== editTarget.role_id) body.role_id = values.role_id
 
     const originalBirthday = parseBirthday(editTarget.birthday)
-    const newBirthday =
-      values.birthday instanceof Date
-        ? values.birthday
-        : parseBirthday(values.birthday as unknown as string)
+    const newBirthday = values.birthday instanceof Date ? values.birthday : null
     if (originalBirthday || newBirthday) {
       if (!originalBirthday && newBirthday) {
         body.birthday = formatYMD(newBirthday)
@@ -211,10 +208,15 @@ export function UsersTab({ roles }: UsersTabProps) {
                     </Table.Td>
                     <Table.Td>
                       <Group gap="xs">
-                        <ActionIcon variant="subtle" onClick={() => handleEdit(u)}>
+                        <ActionIcon
+                          aria-label={`Edit ${u.username}`}
+                          variant="subtle"
+                          onClick={() => handleEdit(u)}
+                        >
                           <Pencil size={14} />
                         </ActionIcon>
                         <ActionIcon
+                          aria-label={`Delete ${u.username}`}
                           variant="subtle"
                           color="red"
                           onClick={() => handleDelete(u)}

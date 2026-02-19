@@ -126,10 +126,15 @@ export function RolesTab({ roles }: { roles: ApiRole[] }) {
                 </Table.Td>
                 <Table.Td>
                   <Group gap="xs">
-                    <ActionIcon variant="subtle" onClick={() => handleEdit(r)}>
+                    <ActionIcon
+                      aria-label={`Edit ${r.name}`}
+                      variant="subtle"
+                      onClick={() => handleEdit(r)}
+                    >
                       <Pencil size={14} />
                     </ActionIcon>
                     <ActionIcon
+                      aria-label={`Delete ${r.name}`}
                       variant="subtle"
                       color="red"
                       onClick={() => handleDelete(r)}
