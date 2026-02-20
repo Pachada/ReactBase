@@ -110,10 +110,15 @@ export function StatusesTab({ statuses }: { statuses: ApiStatus[] }) {
                 <Table.Td>{s.description}</Table.Td>
                 <Table.Td>
                   <Group gap="xs">
-                    <ActionIcon variant="subtle" onClick={() => handleEdit(s)}>
+                    <ActionIcon
+                      aria-label={`Edit ${s.description}`}
+                      variant="subtle"
+                      onClick={() => handleEdit(s)}
+                    >
                       <Pencil size={14} />
                     </ActionIcon>
                     <ActionIcon
+                      aria-label={`Delete ${s.description}`}
                       variant="subtle"
                       color="red"
                       onClick={() => handleDelete(s)}

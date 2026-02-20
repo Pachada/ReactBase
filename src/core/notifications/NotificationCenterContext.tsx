@@ -1,6 +1,7 @@
 import { notifications } from '@mantine/notifications'
 import {
   createContext,
+  useCallback,
   useContext,
   useMemo,
   useState,
@@ -42,26 +43,31 @@ function createNotificationId() {
 export function NotificationCenterProvider({ children }: PropsWithChildren) {
   const [items, setItems] = useState<NotificationFeedItem[]>([])
 
-  const addNotification = ({ title, message, color }: AddNotificationInput) => {
-    const notificationItem: NotificationFeedItem = {
-      id: createNotificationId(),
-      title,
-      message,
-      color,
-      createdAt: Date.now(),
-    }
+  const addNotification = useCallback(
+    ({ title, message, color }: AddNotificationInput) => {
+      const notificationItem: NotificationFeedItem = {
+        id: createNotificationId(),
+        title,
+        message,
+        color,
+        createdAt: Date.now(),
+      }
 
-    setItems((previousItems) => [notificationItem, ...previousItems].slice(0, 30))
-    notifications.show({ title, message, color })
-  }
+      setItems((previousItems) => [notificationItem, ...previousItems].slice(0, 30))
+      notifications.show({ title, message, color })
+    },
+    [],
+  ) // setItems is stable
+
+  const clearNotifications = useCallback(() => setItems([]), [])
 
   const value = useMemo(
     () => ({
       items,
       addNotification,
-      clearNotifications: () => setItems([]),
+      clearNotifications,
     }),
-    [items],
+    [items, addNotification, clearNotifications],
   )
 
   return (

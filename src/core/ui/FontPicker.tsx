@@ -1,5 +1,7 @@
 import { Select, Stack, Text } from '@mantine/core'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
+
+const PREVIEW_TEXT = 'The quick brown fox jumps over the lazy dog'
 
 export interface FontOption {
   value: string
@@ -95,7 +97,6 @@ interface FontPickerProps {
 }
 
 export function FontPicker({ value, onChange }: FontPickerProps) {
-  const [previewText] = useState('The quick brown fox jumps over the lazy dog')
   const currentFont = CURATED_FONTS.find((font) => font.value === value)
 
   useEffect(() => {
@@ -144,7 +145,7 @@ export function FontPicker({ value, onChange }: FontPickerProps) {
         <Text size="xs" c="dimmed" mb={4} style={{ fontFamily: 'inherit' }}>
           Preview ({currentFont?.category || 'custom'}):
         </Text>
-        <Text style={{ fontFamily: 'inherit' }}>{previewText}</Text>
+        <Text style={{ fontFamily: 'inherit' }}>{PREVIEW_TEXT}</Text>
       </div>
     </Stack>
   )
