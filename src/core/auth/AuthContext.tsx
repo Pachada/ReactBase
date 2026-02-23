@@ -18,13 +18,28 @@ import {
 import type { AuthState, AuthUser, LoginCredentials, Role } from '@/core/auth/types'
 import type { AuthEnvelope } from '@/core/api/types'
 
+function parseJwtExpiry(token: string): number | null {
+  try {
+    const payload = token.split('.')[1]
+    if (!payload) return null
+    const b64 = payload.replace(/-/g, '+').replace(/_/g, '/')
+    const padded = b64.padEnd(b64.length + ((4 - (b64.length % 4)) % 4), '=')
+    const decoded = JSON.parse(atob(padded)) as {
+      exp?: number
+    }
+    return typeof decoded.exp === 'number' ? decoded.exp * 1000 : null
+  } catch {
+    return null
+  }
+}
+
 interface AuthContextValue extends AuthState {
   login: (credentials: LoginCredentials, rememberMe?: boolean) => Promise<void>
   loginWithEnvelope: (envelope: AuthEnvelope, rememberMe?: boolean) => Promise<void>
   logout: () => void
   hasRole: (roles: Role[]) => boolean
   refreshUser: (token: string) => Promise<void>
-  // sessionExpiresAt kept for API compat (null — server manages sessions)
+  // sessionExpiresAt is derived from the JWT exp claim; null when anonymous or token lacks exp
   sessionExpiresAt: number | null
   resetSessionTimer: () => void
 }
@@ -85,6 +100,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
       let roleName = 'viewer'
       // NoSQL sends "role": "Admin"; SQL sends "role_id": 3 — handle both
       const roleIdentifier = apiUser.role ?? apiUser.role_id
+      if (!roleIdentifier) {
+        console.warn(
+          '[AuthContext] applyEnvelope: user object has no role or role_id — defaulting to viewer',
+          apiUser,
+        )
+      }
       try {
         const roles = await rolesApi.listRoles(access_token)
         const matched = roles.find(
@@ -97,14 +118,30 @@ export function AuthProvider({ children }: PropsWithChildren) {
         } else if (roleIdentifier) {
           // Only treat non-numeric identifiers as role names (numeric ones are unresolved IDs)
           const identifierStr = String(roleIdentifier)
-          if (!/^\d+$/.test(identifierStr.trim())) roleName = identifierStr.toLowerCase()
+          if (!/^\d+$/.test(identifierStr.trim())) {
+            roleName = identifierStr.toLowerCase()
+          } else {
+            console.warn(
+              `[AuthContext] applyEnvelope: numeric role_id "${roleIdentifier}" not found in roles list — defaulting to viewer. Check that the roles API returns all roles.`,
+            )
+          }
         }
-      } catch {
+      } catch (err) {
+        console.warn(
+          '[AuthContext] applyEnvelope: rolesApi.listRoles failed — falling back to identifier-based role resolution',
+          err,
+        )
         // non-fatal: fallback mirrors the else branch above — intentionally duplicated
         // here so that a roles API failure still resolves a NoSQL string role name.
         if (roleIdentifier) {
           const identifierStr = String(roleIdentifier)
-          if (!/^\d+$/.test(identifierStr.trim())) roleName = identifierStr.toLowerCase()
+          if (!/^\d+$/.test(identifierStr.trim())) {
+            roleName = identifierStr.toLowerCase()
+          } else {
+            console.warn(
+              `[AuthContext] applyEnvelope: numeric role_id "${roleIdentifier}" cannot be resolved without roles API — defaulting to viewer`,
+            )
+          }
         }
       }
 
@@ -198,6 +235,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
     })
   }, [])
 
+  const resetSessionTimer = useCallback(() => {
+    void doSilentRefresh(authState.refreshToken)
+  }, [doSilentRefresh, authState.refreshToken])
+
   const value = useMemo(
     () => ({
       ...authState,
@@ -206,10 +247,18 @@ export function AuthProvider({ children }: PropsWithChildren) {
       logout,
       hasRole,
       refreshUser,
-      sessionExpiresAt: null,
-      resetSessionTimer: () => {},
+      sessionExpiresAt: parseJwtExpiry(authState.token ?? ''),
+      resetSessionTimer,
     }),
-    [authState, hasRole, login, loginWithEnvelope, logout, refreshUser],
+    [
+      authState,
+      hasRole,
+      login,
+      loginWithEnvelope,
+      logout,
+      refreshUser,
+      resetSessionTimer,
+    ],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

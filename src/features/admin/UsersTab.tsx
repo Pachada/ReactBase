@@ -14,11 +14,12 @@ import {
 import { useDisclosure } from '@mantine/hooks'
 import { DateInput } from '@mantine/dates'
 import 'dayjs/locale/en'
-import { ChevronLeft, ChevronRight, Pencil, Trash2 } from 'lucide-react'
+import { Pencil, Trash2 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/core/auth/AuthContext'
+import { useNotificationCenter } from '@/core/notifications/NotificationCenterContext'
 import type { ApiRole, ApiUser, EntityId, UpdateUserRequest } from '@/core/api/types'
 import { usersApi } from '@/features/admin/users-api'
 import {
@@ -45,37 +46,23 @@ export function UsersTab({ roles }: UsersTabProps) {
   const auth = useAuth()
   const token = auth.token ?? ''
   const queryClient = useQueryClient()
-  // cursorStack[0] is always '' (first page); each push is the next_cursor for that page
-  const [cursorStack, setCursorStack] = useState<string[]>([''])
-  const currentCursor = cursorStack[cursorStack.length - 1]
-  const currentPage = cursorStack.length
+  const { addNotification } = useNotificationCenter()
   const [editTarget, setEditTarget] = useState<ApiUser | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ApiUser | null>(null)
   const [editOpened, { open: openEdit, close: closeEdit }] = useDisclosure(false)
   const [deleteOpened, { open: openDelete, close: closeDelete }] = useDisclosure(false)
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['users', currentCursor],
-    queryFn: () =>
-      usersApi.listUsers({ limit: 20, cursor: currentCursor || undefined }, token),
-    enabled: !!token,
-  })
+  const { data, isLoading, isFetchingNextPage, fetchNextPage, hasNextPage, isError } =
+    useInfiniteQuery({
+      queryKey: ['users', token],
+      queryFn: ({ pageParam }) =>
+        usersApi.listUsers({ limit: 50, cursor: pageParam }, token),
+      initialPageParam: undefined as string | undefined,
+      getNextPageParam: (lastPage) => lastPage?.next_cursor || undefined,
+      enabled: !!token,
+    })
 
-  const users: ApiUser[] = data?.data ?? []
-  const nextCursor = data?.next_cursor
-
-  function goNext() {
-    if (nextCursor) {
-      setCursorStack((prev) => {
-        if (prev.length >= 100) return prev
-        return [...prev, nextCursor]
-      })
-    }
-  }
-
-  function goPrev() {
-    setCursorStack((prev) => (prev.length > 1 ? prev.slice(0, -1) : prev))
-  }
+  const users: ApiUser[] = data?.pages.flatMap((p) => p?.data ?? []) ?? []
 
   const { register, control, handleSubmit, formState, reset } = useForm<EditUserForm>()
 
@@ -83,25 +70,63 @@ export function UsersTab({ roles }: UsersTabProps) {
     mutationFn: ({ id, body }: { id: EntityId; body: UpdateUserRequest }) =>
       usersApi.updateUser(id, body, token, true),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] })
+      queryClient.invalidateQueries({ queryKey: ['users', token] })
       closeEdit()
+      addNotification({
+        title: 'User updated',
+        message: 'Changes have been saved.',
+        color: 'green',
+      })
+    },
+    onError: () => {
+      addNotification({
+        title: 'Update failed',
+        message: 'Could not save changes. Please try again.',
+        color: 'red',
+      })
     },
   })
 
   const deleteMutation = useMutation({
     mutationFn: (id: EntityId) => usersApi.deleteUser(id, token),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] })
+      queryClient.invalidateQueries({ queryKey: ['users', token] })
       closeDelete()
+      addNotification({
+        title: 'User deleted',
+        message: 'The user has been removed.',
+        color: 'green',
+      })
+    },
+    onError: () => {
+      addNotification({
+        title: 'Delete failed',
+        message: 'Could not delete the user. Please try again.',
+        color: 'red',
+      })
     },
   })
 
   const toggleEnableMutation = useMutation({
     mutationFn: ({ id, enable }: { id: EntityId; enable: boolean }) =>
       usersApi.updateUser(id, { enable }, token, true),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] })
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['users', token] })
       closeDelete()
+      addNotification({
+        title: variables.enable ? 'User enabled' : 'User disabled',
+        message: variables.enable
+          ? 'The user can now log in.'
+          : 'The user has been disabled.',
+        color: variables.enable ? 'green' : 'orange',
+      })
+    },
+    onError: () => {
+      addNotification({
+        title: 'Action failed',
+        message: 'Could not update the user status. Please try again.',
+        color: 'red',
+      })
     },
   })
 
@@ -169,6 +194,10 @@ export function UsersTab({ roles }: UsersTabProps) {
       <Stack>
         {isLoading ? (
           <Loader mx="auto" my="xl" />
+        ) : isError ? (
+          <Text c="red" ta="center" py="md">
+            Failed to load users. Please try again.
+          </Text>
         ) : (
           <>
             <Table highlightOnHover withTableBorder withColumnBorders>
@@ -238,28 +267,21 @@ export function UsersTab({ roles }: UsersTabProps) {
                 )}
               </Table.Tbody>
             </Table>
-            <Group justify="space-between" align="center">
-              <Button
-                variant="subtle"
-                size="sm"
-                leftSection={<ChevronLeft size={14} />}
-                onClick={goPrev}
-                disabled={currentPage === 1}
-              >
-                Previous
-              </Button>
-              <Text size="sm" c="dimmed">
-                Page {currentPage}
-              </Text>
-              <Button
-                variant="subtle"
-                size="sm"
-                rightSection={<ChevronRight size={14} />}
-                onClick={goNext}
-                disabled={!nextCursor}
-              >
-                Next
-              </Button>
+            <Group justify="center">
+              {hasNextPage ? (
+                <Button
+                  variant="subtle"
+                  size="sm"
+                  onClick={() => fetchNextPage()}
+                  loading={isFetchingNextPage}
+                >
+                  Load more
+                </Button>
+              ) : (
+                <Text size="sm" c="dimmed">
+                  All users loaded
+                </Text>
+              )}
             </Group>
           </>
         )}

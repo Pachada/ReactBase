@@ -1,5 +1,13 @@
 import type { AuthState } from '@/core/auth/types'
 
+// SECURITY NOTE: Tokens are stored in sessionStorage by default and in localStorage
+// only when the user opts into "remember me". Both are readable by JavaScript, which
+// means an XSS attack could steal tokens. The preferred mitigation is httpOnly cookies
+// set by the backend (JS-inaccessible), but that requires the backend to return tokens
+// as Set-Cookie headers instead of JSON — a contract change that also breaks native
+// mobile clients that rely on bearer tokens. Until the backend adopts httpOnly cookies,
+// ensure a strict Content-Security-Policy header is set at the server/CDN level to
+// reduce the XSS attack surface.
 const AUTH_STORAGE_KEY = 'reactbase.auth'
 export const AUTH_REMEMBER_KEY = 'reactbase.auth.remember'
 

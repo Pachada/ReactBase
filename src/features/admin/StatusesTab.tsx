@@ -37,7 +37,7 @@ export function StatusesTab({ statuses }: { statuses: ApiStatus[] }) {
   const createMutation = useMutation({
     mutationFn: (body: StatusInput) => statusesApi.createStatus(body, token),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['statuses'] })
+      queryClient.invalidateQueries({ queryKey: ['statuses', token] })
       closeForm()
     },
   })
@@ -46,7 +46,7 @@ export function StatusesTab({ statuses }: { statuses: ApiStatus[] }) {
     mutationFn: ({ id, body }: { id: number; body: StatusInput }) =>
       statusesApi.updateStatus(id, body, token),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['statuses'] })
+      queryClient.invalidateQueries({ queryKey: ['statuses', token] })
       closeForm()
     },
   })
@@ -54,7 +54,7 @@ export function StatusesTab({ statuses }: { statuses: ApiStatus[] }) {
   const deleteMutation = useMutation({
     mutationFn: (id: number) => statusesApi.deleteStatus(id, token),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['statuses'] })
+      queryClient.invalidateQueries({ queryKey: ['statuses', token] })
       closeDelete()
     },
   })

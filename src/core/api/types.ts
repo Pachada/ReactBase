@@ -175,10 +175,16 @@ export interface PasswordRecoveryRequest {
 
 export interface PasswordRecoveryValidateRequest {
   otp: string
+  email?: string
   device_uuid?: string
 }
 
 export interface ChangePasswordRequest {
+  new_password: string
+}
+
+export interface AuthenticatedChangePasswordRequest {
+  current_password: string
   new_password: string
 }
 

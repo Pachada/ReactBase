@@ -59,7 +59,32 @@ DO use early returns to avoid deep conditional nesting in JSX.
 
 DON'T use complex ternary operators for conditional rendering; prefer && for simple conditionals or extract complex logic outside the return statement.
 
-## 5. Security and Safety
+## 5. Component Reusability
+
+DO actively scan for repeated UI patterns across the codebase and flag them as candidates for extraction into shared components. Look for:
+
+- Identical or near-identical JSX blocks appearing in more than one file (e.g., the same card layout, form row, loading skeleton, or empty-state message).
+- The same combination of Mantine / UI-library primitives always used together with the same props — these should become a named wrapper component.
+
+DO look for duplicated stateful logic across components and suggest extracting it into a custom hook. Common signals:
+
+- The same `useState` + `useEffect` pair appearing in multiple components.
+- Identical error-handling patterns (try/catch + toast/notification) repeated across feature modules.
+- The same `useMutation` / `useQuery` wiring copied between tabs or pages (e.g., every CRUD tab doing its own list + invalidate logic).
+
+DO flag props that act as feature flags or switch-cases inside a component (e.g., `variant`, `mode`, `type` that drive completely different render trees). Suggest splitting into separate focused components instead.
+
+DON'T extract too eagerly. A component is worth extracting when it is used (or clearly will be used) in **two or more** independent places, or when extracting it meaningfully reduces cognitive load. Single-use abstractions add indirection without benefit.
+
+DO check that shared components are placed in the right layer:
+
+- Generic, domain-free UI primitives → `src/components/` or `src/ui/`.
+- Domain-specific reusable pieces (e.g., `UserAvatar`, `RoleBadge`) → the relevant feature's `components/` subfolder.
+- Reusable async/data logic → `src/core/hooks/` or co-located `use*.ts` files.
+
+DO verify that extracted components accept **typed props** with clear interfaces — no implicit coupling through context or global state unless that coupling is intentional and documented.
+
+## 6. Security and Safety
 
 DON'T use dangerouslySetInnerHTML unless explicitly required and the input is heavily sanitized (e.g., using DOMPurify). Flag this immediately as a critical security risk.
 
@@ -80,3 +105,5 @@ DO ensure proper error handling (e.g., try/catch blocks) for all asynchronous da
 Use the /react-reviews skill to review the authentication flow in this React app.
 
 Use the /react-reviews skill to scan for performance issues and anti-patterns in the dashboard components.
+
+Use the /react-reviews skill to identify repeated UI patterns and stateful logic that could be extracted into shared components or custom hooks.
