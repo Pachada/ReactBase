@@ -98,6 +98,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
       let roleName = 'viewer'
       // NoSQL sends "role": "Admin"; SQL sends "role_id": 3 — handle both
       const roleIdentifier = apiUser.role ?? apiUser.role_id
+      if (!roleIdentifier) {
+        console.warn(
+          '[AuthContext] applyEnvelope: user object has no role or role_id — defaulting to viewer',
+          apiUser,
+        )
+      }
       try {
         const roles = await rolesApi.listRoles(access_token)
         const matched = roles.find(
@@ -110,14 +116,30 @@ export function AuthProvider({ children }: PropsWithChildren) {
         } else if (roleIdentifier) {
           // Only treat non-numeric identifiers as role names (numeric ones are unresolved IDs)
           const identifierStr = String(roleIdentifier)
-          if (!/^\d+$/.test(identifierStr.trim())) roleName = identifierStr.toLowerCase()
+          if (!/^\d+$/.test(identifierStr.trim())) {
+            roleName = identifierStr.toLowerCase()
+          } else {
+            console.warn(
+              `[AuthContext] applyEnvelope: numeric role_id "${roleIdentifier}" not found in roles list — defaulting to viewer. Check that the roles API returns all roles.`,
+            )
+          }
         }
-      } catch {
+      } catch (err) {
+        console.warn(
+          '[AuthContext] applyEnvelope: rolesApi.listRoles failed — falling back to identifier-based role resolution',
+          err,
+        )
         // non-fatal: fallback mirrors the else branch above — intentionally duplicated
         // here so that a roles API failure still resolves a NoSQL string role name.
         if (roleIdentifier) {
           const identifierStr = String(roleIdentifier)
-          if (!/^\d+$/.test(identifierStr.trim())) roleName = identifierStr.toLowerCase()
+          if (!/^\d+$/.test(identifierStr.trim())) {
+            roleName = identifierStr.toLowerCase()
+          } else {
+            console.warn(
+              `[AuthContext] applyEnvelope: numeric role_id "${roleIdentifier}" cannot be resolved without roles API — defaulting to viewer`,
+            )
+          }
         }
       }
 

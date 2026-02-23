@@ -11,32 +11,34 @@ import {
   Title,
   useMantineColorScheme,
 } from '@mantine/core'
-import { CheckCircle, Mail, Zap } from 'lucide-react'
+import { CheckCircle, Zap } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { apiClient } from '@/core/api/http-client'
 import { ApiError } from '@/core/api/ApiError'
 import type { AuthEnvelope } from '@/core/api/types'
+import { useAuth } from '@/core/auth/AuthContext'
 import { useNotificationCenter } from '@/core/notifications/NotificationCenterContext'
 
-type Step = 0 | 1 | 2 | 3 // 3 = done
+type Step = 0 | 1 | 2 // 2 = done
 
 export function ForgotPasswordPage() {
   const { addNotification } = useNotificationCenter()
+  const { loginWithEnvelope } = useAuth()
+  const navigate = useNavigate()
   const { colorScheme } = useMantineColorScheme()
   const [step, setStep] = useState<Step>(0)
   const [email, setEmail] = useState('')
   const [otp, setOtp] = useState('')
-  const [tempToken, setTempToken] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
-  // Step 1 — email form
+  // Step 0 — email form
   const emailForm = useForm<{ email: string }>({
     defaultValues: { email: '' },
     mode: 'onBlur',
   })
-  // Step 3 — new password form
+  // Step 1 — OTP + new password (combined)
   const pwdForm = useForm<{ password: string; confirmPassword: string }>({
     defaultValues: { password: '', confirmPassword: '' },
     mode: 'onBlur',
@@ -64,54 +66,39 @@ export function ForgotPasswordPage() {
     }
   }
 
-  async function handleOtpSubmit() {
-    if (otp.length < 6) return
-    setIsLoading(true)
-    try {
-      const envelope = await apiClient.request<AuthEnvelope>(
-        '/v1/password-recovery/validate-code',
-        { method: 'POST', body: { otp } },
-      )
-      // NOTE: The access_token returned here is a temporary reset token.
-      // The backend must scope it to password-reset only and enforce a short TTL (5–10 min).
-      // Do NOT persist this token in localStorage or auth state — it should only be held
-      // in component state for the duration of the password-reset flow.
-      if (!envelope?.access_token) throw new Error('Invalid code')
-      setTempToken(envelope.access_token)
-      setStep(2)
-    } catch (error) {
-      let message = 'Please check your OTP and try again.'
-      if (error instanceof ApiError) {
-        if (error.status === 410)
-          message = 'This code has expired. Please request a new one.'
-        else if (error.status === 400) message = 'Invalid code. Please try again.'
-      }
-      addNotification({ title: 'Invalid code', message, color: 'red' })
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  async function handlePasswordSubmit(values: {
+  async function handleVerifyAndReset(values: {
     password: string
     confirmPassword: string
   }) {
-    if (values.password !== values.confirmPassword) {
-      pwdForm.setError('confirmPassword', { message: 'Passwords do not match' })
+    if (otp.length < 6) {
+      addNotification({
+        title: 'Code required',
+        message: 'Enter the 6-digit code first.',
+        color: 'orange',
+      })
       return
     }
     setIsLoading(true)
     try {
-      await apiClient.request('/v1/password-recovery/change-password', {
-        method: 'POST',
-        token: tempToken,
-        body: { new_password: values.password },
-      })
-      setStep(3)
+      const envelope = await apiClient.request<AuthEnvelope>(
+        '/v1/password-recovery/validate-code',
+        { method: 'POST', body: { otp, new_password: values.password, email } },
+      )
+      if (!envelope?.access_token) throw new Error('Invalid response')
+      try {
+        await loginWithEnvelope(envelope)
+        navigate('/')
+      } catch {
+        // Password was reset but auto-login failed — show success and let user log in
+        setStep(2)
+      }
     } catch (error) {
-      let message = 'Failed to change password. Please try again.'
-      if (error instanceof ApiError && error.status === 401) {
-        message = 'Your reset session has expired. Please start over.'
+      let message = 'Please check your code and try again.'
+      if (error instanceof ApiError) {
+        if (error.status === 410)
+          message = 'This code has expired. Please request a new one.'
+        else if (error.status === 400 || error.status === 401)
+          message = 'Invalid code. Please try again.'
       }
       pwdForm.setError('root', { message })
     } finally {
@@ -136,7 +123,7 @@ export function ForgotPasswordPage() {
     </div>
   )
 
-  if (step === 3) {
+  if (step === 2) {
     return (
       <div className="login-shell">
         {hero}
@@ -160,12 +147,7 @@ export function ForgotPasswordPage() {
               Your password has been updated. You can now sign in with your new
               credentials.
             </Text>
-            <Button
-              component={Link}
-              to="/login"
-              fullWidth
-              leftSection={<Mail size={16} />}
-            >
+            <Button component={Link} to="/login" fullWidth>
               Back to sign in
             </Button>
           </Stack>
@@ -190,8 +172,7 @@ export function ForgotPasswordPage() {
 
           <Stepper active={step} size="sm" mb="md">
             <Stepper.Step label="Email" />
-            <Stepper.Step label="Verify code" />
-            <Stepper.Step label="New password" />
+            <Stepper.Step label="Verify & reset" />
           </Stepper>
 
           {step === 0 && (
@@ -219,48 +200,28 @@ export function ForgotPasswordPage() {
           )}
 
           {step === 1 && (
-            <Stack>
-              <Text size="sm" c="dimmed">
-                Enter the 6-digit code we sent to <b>{email}</b>.
-              </Text>
-              <Center>
-                <PinInput
-                  length={6}
-                  size="md"
-                  value={otp}
-                  onChange={setOtp}
-                  onComplete={handleOtpSubmit}
-                  type="number"
-                />
-              </Center>
-              <Button
-                size="md"
-                loading={isLoading}
-                fullWidth
-                onClick={handleOtpSubmit}
-                disabled={otp.length < 6}
-              >
-                Verify code
-              </Button>
-              <Button variant="subtle" size="sm" onClick={() => setStep(0)}>
-                Change email
-              </Button>
-            </Stack>
-          )}
-
-          {step === 2 && (
-            <form onSubmit={pwdForm.handleSubmit(handlePasswordSubmit)}>
+            <form onSubmit={pwdForm.handleSubmit(handleVerifyAndReset)}>
               <Stack>
+                <Text size="sm" c="dimmed">
+                  Enter the 6-digit code sent to <b>{email}</b> and choose a new password.
+                </Text>
+                <Center>
+                  <PinInput
+                    length={6}
+                    size="md"
+                    value={otp}
+                    onChange={setOtp}
+                    type="number"
+                  />
+                </Center>
                 <PasswordInput
                   label="New password"
-                  placeholder="••••••••"
+                  placeholder="At least 8 characters"
                   size="md"
                   {...pwdForm.register('password', {
                     required: 'Password is required',
-                    minLength: {
-                      value: 8,
-                      message: 'Password must be at least 8 characters',
-                    },
+                    minLength: { value: 8, message: 'At least 8 characters' },
+                    maxLength: { value: 72, message: 'Maximum 72 characters' },
                   })}
                   error={pwdForm.formState.errors.password?.message}
                 />
@@ -270,6 +231,8 @@ export function ForgotPasswordPage() {
                   size="md"
                   {...pwdForm.register('confirmPassword', {
                     required: 'Please confirm your password',
+                    validate: (v) =>
+                      v === pwdForm.getValues('password') || 'Passwords do not match',
                   })}
                   error={pwdForm.formState.errors.confirmPassword?.message}
                 />
@@ -279,7 +242,10 @@ export function ForgotPasswordPage() {
                   </Text>
                 )}
                 <Button type="submit" size="md" loading={isLoading} fullWidth>
-                  Change password
+                  Reset password
+                </Button>
+                <Button variant="subtle" size="sm" onClick={() => setStep(0)}>
+                  Change email
                 </Button>
               </Stack>
             </form>

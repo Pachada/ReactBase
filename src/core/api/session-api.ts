@@ -39,11 +39,7 @@ export const sessionApi = {
     body: ChangePasswordRequest,
     token: string,
   ): Promise<MessageEnvelope | undefined> {
-    // NOTE: Reuses the password-recovery endpoint for authenticated password changes.
-    // The backend accepts a valid access_token (regular session token) here — no separate
-    // "change password while logged in" endpoint exists. If the backend later adds one
-    // (e.g. POST /v1/users/me/password) that requires the current password, update here.
-    return apiClient.request<MessageEnvelope>('/v1/password-recovery/change-password', {
+    return apiClient.request<MessageEnvelope>('/v1/users/me/password', {
       method: 'POST',
       body,
       token,

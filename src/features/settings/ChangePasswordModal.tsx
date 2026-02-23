@@ -7,6 +7,7 @@ import { sessionApi } from '@/core/api/session-api'
 import { useNotificationCenter } from '@/core/notifications/NotificationCenterContext'
 
 interface ChangePasswordForm {
+  current_password: string
   new_password: string
   confirm_password: string
 }
@@ -23,7 +24,7 @@ export function ChangePasswordModal({ opened, onClose }: ChangePasswordModalProp
 
   const { register, handleSubmit, formState, reset, getValues, trigger } =
     useForm<ChangePasswordForm>({
-      defaultValues: { new_password: '', confirm_password: '' },
+      defaultValues: { current_password: '', new_password: '', confirm_password: '' },
     })
 
   const handleClose = () => {
@@ -32,7 +33,7 @@ export function ChangePasswordModal({ opened, onClose }: ChangePasswordModalProp
   }
 
   const changePasswordMutation = useMutation({
-    mutationFn: (body: { new_password: string }) =>
+    mutationFn: (body: { current_password: string; new_password: string }) =>
       sessionApi.changePassword(body, token),
     onSuccess: () => {
       handleClose()
@@ -52,7 +53,10 @@ export function ChangePasswordModal({ opened, onClose }: ChangePasswordModalProp
   })
 
   const onChangePassword = (values: ChangePasswordForm) => {
-    changePasswordMutation.mutate({ new_password: values.new_password })
+    changePasswordMutation.mutate({
+      current_password: values.current_password,
+      new_password: values.new_password,
+    })
   }
 
   return (
@@ -70,6 +74,12 @@ export function ChangePasswordModal({ opened, onClose }: ChangePasswordModalProp
     >
       <form onSubmit={handleSubmit(onChangePassword)}>
         <Stack gap="md">
+          <PasswordInput
+            label="Current password"
+            placeholder="Your current password"
+            {...register('current_password', { required: 'Required' })}
+            error={formState.errors.current_password?.message}
+          />
           <PasswordInput
             label="New password"
             placeholder="At least 8 characters"
