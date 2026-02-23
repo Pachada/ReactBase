@@ -175,6 +175,7 @@ export interface PasswordRecoveryRequest {
 
 export interface PasswordRecoveryValidateRequest {
   otp: string
+  email?: string
   device_uuid?: string
 }
 

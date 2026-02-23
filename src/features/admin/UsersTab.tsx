@@ -54,7 +54,7 @@ export function UsersTab({ roles }: UsersTabProps) {
 
   const { data, isLoading, isFetchingNextPage, fetchNextPage, hasNextPage, isError } =
     useInfiniteQuery({
-      queryKey: ['users'],
+      queryKey: ['users', token],
       queryFn: ({ pageParam }) =>
         usersApi.listUsers({ limit: 50, cursor: pageParam }, token),
       initialPageParam: undefined as string | undefined,
@@ -70,7 +70,7 @@ export function UsersTab({ roles }: UsersTabProps) {
     mutationFn: ({ id, body }: { id: EntityId; body: UpdateUserRequest }) =>
       usersApi.updateUser(id, body, token, true),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] })
+      queryClient.invalidateQueries({ queryKey: ['users', token] })
       closeEdit()
       addNotification({
         title: 'User updated',
@@ -90,7 +90,7 @@ export function UsersTab({ roles }: UsersTabProps) {
   const deleteMutation = useMutation({
     mutationFn: (id: EntityId) => usersApi.deleteUser(id, token),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] })
+      queryClient.invalidateQueries({ queryKey: ['users', token] })
       closeDelete()
       addNotification({
         title: 'User deleted',
@@ -111,7 +111,7 @@ export function UsersTab({ roles }: UsersTabProps) {
     mutationFn: ({ id, enable }: { id: EntityId; enable: boolean }) =>
       usersApi.updateUser(id, { enable }, token, true),
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['users'] })
+      queryClient.invalidateQueries({ queryKey: ['users', token] })
       closeDelete()
       addNotification({
         title: variables.enable ? 'User enabled' : 'User disabled',

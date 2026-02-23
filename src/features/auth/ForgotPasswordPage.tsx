@@ -80,16 +80,25 @@ export function ForgotPasswordPage() {
     }
     setIsLoading(true)
     try {
+      // Step 1: validate OTP → get temporary auth tokens
       const envelope = await apiClient.request<AuthEnvelope>(
         '/v1/password-recovery/validate-code',
-        { method: 'POST', body: { otp, new_password: values.password, email } },
+        { method: 'POST', body: { otp, email } },
       )
       if (!envelope?.access_token) throw new Error('Invalid response')
+
+      // Step 2: change password using the temporary token
+      await apiClient.request('/v1/password-recovery/change-password', {
+        method: 'POST',
+        token: envelope.access_token,
+        body: { new_password: values.password, current_password: '' },
+      })
+
+      // Auto-login with the envelope; fall through to success screen on failure
       try {
         await loginWithEnvelope(envelope)
         navigate('/')
       } catch {
-        // Password was reset but auto-login failed — show success and let user log in
         setStep(2)
       }
     } catch (error) {

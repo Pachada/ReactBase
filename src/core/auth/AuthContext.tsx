@@ -22,7 +22,9 @@ function parseJwtExpiry(token: string): number | null {
   try {
     const payload = token.split('.')[1]
     if (!payload) return null
-    const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/'))) as {
+    const b64 = payload.replace(/-/g, '+').replace(/_/g, '/')
+    const padded = b64.padEnd(b64.length + ((4 - (b64.length % 4)) % 4), '=')
+    const decoded = JSON.parse(atob(padded)) as {
       exp?: number
     }
     return typeof decoded.exp === 'number' ? decoded.exp * 1000 : null
@@ -37,7 +39,7 @@ interface AuthContextValue extends AuthState {
   logout: () => void
   hasRole: (roles: Role[]) => boolean
   refreshUser: (token: string) => Promise<void>
-  // sessionExpiresAt kept for API compat (null — server manages sessions)
+  // sessionExpiresAt is derived from the JWT exp claim; null when anonymous or token lacks exp
   sessionExpiresAt: number | null
   resetSessionTimer: () => void
 }
