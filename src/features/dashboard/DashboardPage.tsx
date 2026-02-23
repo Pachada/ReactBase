@@ -14,7 +14,6 @@ import { useLocalStorage } from '@mantine/hooks'
 import { Layers, Palette, ShieldCheck, Workflow } from 'lucide-react'
 import { useAuth } from '@/core/auth/AuthContext'
 import { PageTransition } from '@/core/ui/PageTransition'
-import { ProfileFormCard } from '@/features/dashboard/ProfileFormCard'
 
 function getGreeting() {
   const hour = new Date().getHours()
@@ -147,7 +146,6 @@ export function DashboardPage() {
         <Alert variant="light" color="indigo" title="Demo credentials" radius="md">
           Use any username and role, and password <b>changeme</b> to sign in.
         </Alert>
-        <ProfileFormCard />
       </Stack>
     </PageTransition>
   )

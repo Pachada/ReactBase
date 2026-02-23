@@ -18,6 +18,19 @@ import {
 import type { AuthState, AuthUser, LoginCredentials, Role } from '@/core/auth/types'
 import type { AuthEnvelope } from '@/core/api/types'
 
+function parseJwtExpiry(token: string): number | null {
+  try {
+    const payload = token.split('.')[1]
+    if (!payload) return null
+    const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/'))) as {
+      exp?: number
+    }
+    return typeof decoded.exp === 'number' ? decoded.exp * 1000 : null
+  } catch {
+    return null
+  }
+}
+
 interface AuthContextValue extends AuthState {
   login: (credentials: LoginCredentials, rememberMe?: boolean) => Promise<void>
   loginWithEnvelope: (envelope: AuthEnvelope, rememberMe?: boolean) => Promise<void>
@@ -198,6 +211,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
     })
   }, [])
 
+  const resetSessionTimer = useCallback(() => {
+    void doSilentRefresh(authState.refreshToken)
+  }, [doSilentRefresh, authState.refreshToken])
+
   const value = useMemo(
     () => ({
       ...authState,
@@ -206,10 +223,18 @@ export function AuthProvider({ children }: PropsWithChildren) {
       logout,
       hasRole,
       refreshUser,
-      sessionExpiresAt: null,
-      resetSessionTimer: () => {},
+      sessionExpiresAt: parseJwtExpiry(authState.token ?? ''),
+      resetSessionTimer,
     }),
-    [authState, hasRole, login, loginWithEnvelope, logout, refreshUser],
+    [
+      authState,
+      hasRole,
+      login,
+      loginWithEnvelope,
+      logout,
+      refreshUser,
+      resetSessionTimer,
+    ],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

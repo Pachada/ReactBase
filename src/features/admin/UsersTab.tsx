@@ -19,6 +19,7 @@ import { useState, useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/core/auth/AuthContext'
+import { useNotificationCenter } from '@/core/notifications/NotificationCenterContext'
 import type { ApiRole, ApiUser, EntityId, UpdateUserRequest } from '@/core/api/types'
 import { usersApi } from '@/features/admin/users-api'
 import {
@@ -45,6 +46,7 @@ export function UsersTab({ roles }: UsersTabProps) {
   const auth = useAuth()
   const token = auth.token ?? ''
   const queryClient = useQueryClient()
+  const { addNotification } = useNotificationCenter()
   // cursorStack[0] is always '' (first page); each push is the next_cursor for that page
   const [cursorStack, setCursorStack] = useState<string[]>([''])
   const currentCursor = cursorStack[cursorStack.length - 1]
@@ -85,6 +87,18 @@ export function UsersTab({ roles }: UsersTabProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] })
       closeEdit()
+      addNotification({
+        title: 'User updated',
+        message: 'Changes have been saved.',
+        color: 'green',
+      })
+    },
+    onError: () => {
+      addNotification({
+        title: 'Update failed',
+        message: 'Could not save changes. Please try again.',
+        color: 'red',
+      })
     },
   })
 
@@ -93,15 +107,41 @@ export function UsersTab({ roles }: UsersTabProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] })
       closeDelete()
+      addNotification({
+        title: 'User deleted',
+        message: 'The user has been removed.',
+        color: 'green',
+      })
+    },
+    onError: () => {
+      addNotification({
+        title: 'Delete failed',
+        message: 'Could not delete the user. Please try again.',
+        color: 'red',
+      })
     },
   })
 
   const toggleEnableMutation = useMutation({
     mutationFn: ({ id, enable }: { id: EntityId; enable: boolean }) =>
       usersApi.updateUser(id, { enable }, token, true),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['users'] })
       closeDelete()
+      addNotification({
+        title: variables.enable ? 'User enabled' : 'User disabled',
+        message: variables.enable
+          ? 'The user can now log in.'
+          : 'The user has been disabled.',
+        color: variables.enable ? 'green' : 'orange',
+      })
+    },
+    onError: () => {
+      addNotification({
+        title: 'Action failed',
+        message: 'Could not update the user status. Please try again.',
+        color: 'red',
+      })
     },
   })
 
