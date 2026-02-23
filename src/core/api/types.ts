@@ -180,6 +180,10 @@ export interface PasswordRecoveryValidateRequest {
 }
 
 export interface ChangePasswordRequest {
+  new_password: string
+}
+
+export interface AuthenticatedChangePasswordRequest {
   current_password: string
   new_password: string
 }

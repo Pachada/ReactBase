@@ -98,7 +98,8 @@ export function ForgotPasswordPage() {
       try {
         await loginWithEnvelope(envelope)
         navigate('/')
-      } catch {
+      } catch (err) {
+        console.error('Auto-login after password reset failed:', err)
         setStep(2)
       }
     } catch (error) {

@@ -3,7 +3,8 @@ import { AlertTriangle, Clock } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useAuth } from './AuthContext'
 
-const WARNING_THRESHOLD_MS = 15 * 60 * 1000 // 15 minutes
+// 15 minutes — gives users adequate time to save work before the session expires
+const WARNING_THRESHOLD_MS = 15 * 60 * 1000
 
 export function SessionTimeoutWarning() {
   const { sessionExpiresAt, status, logout, resetSessionTimer } = useAuth()

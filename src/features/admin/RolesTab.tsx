@@ -38,7 +38,7 @@ export function RolesTab({ roles }: { roles: ApiRole[] }) {
   const createMutation = useMutation({
     mutationFn: (body: RoleInput) => rolesApi.createRole(body, token),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['roles'] })
+      queryClient.invalidateQueries({ queryKey: ['roles', token] })
       closeForm()
     },
   })
@@ -47,7 +47,7 @@ export function RolesTab({ roles }: { roles: ApiRole[] }) {
     mutationFn: ({ id, body }: { id: EntityId; body: RoleInput }) =>
       rolesApi.updateRole(id, body, token),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['roles'] })
+      queryClient.invalidateQueries({ queryKey: ['roles', token] })
       closeForm()
     },
   })
@@ -55,7 +55,7 @@ export function RolesTab({ roles }: { roles: ApiRole[] }) {
   const deleteMutation = useMutation({
     mutationFn: (id: EntityId) => rolesApi.deleteRole(id, token),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['roles'] })
+      queryClient.invalidateQueries({ queryKey: ['roles', token] })
       closeDelete()
     },
   })
@@ -64,7 +64,7 @@ export function RolesTab({ roles }: { roles: ApiRole[] }) {
     mutationFn: ({ id, name, enable }: { id: EntityId; name: string; enable: boolean }) =>
       rolesApi.updateRole(id, { name, enable }, token),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['roles'] })
+      queryClient.invalidateQueries({ queryKey: ['roles', token] })
       closeDelete()
     },
   })
