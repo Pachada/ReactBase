@@ -16,12 +16,14 @@ export function AdminPage() {
     queryKey: ['roles'],
     queryFn: () => rolesApi.listRoles(token),
     enabled: !!token,
+    staleTime: Infinity,
   })
 
   const { data: statuses = [], isLoading: statusesLoading } = useQuery({
     queryKey: ['statuses'],
     queryFn: () => statusesApi.listStatuses(token),
     enabled: !!token,
+    staleTime: Infinity,
   })
 
   return (
