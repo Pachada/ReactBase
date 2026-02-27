@@ -1,4 +1,5 @@
 import { apiClient } from '@/core/api/http-client'
+import { urls } from '@/core/config/urls'
 import type { ApiRole, EntityId, RoleInput } from '@/core/api/types'
 
 interface RolesListEnvelope {
@@ -8,7 +9,7 @@ interface RolesListEnvelope {
 export const rolesApi = {
   async listRoles(token: string): Promise<ApiRole[]> {
     const res = await apiClient.request<RolesListEnvelope | ApiRole[] | string[]>(
-      '/v1/roles',
+      urls.roles(),
       { token },
     )
     if (!res) return []
@@ -25,11 +26,11 @@ export const rolesApi = {
   },
 
   getRole(id: EntityId, token: string): Promise<ApiRole | undefined> {
-    return apiClient.request<ApiRole>(`/v1/roles/${id}`, { token })
+    return apiClient.request<ApiRole>(urls.roleById(id), { token })
   },
 
   createRole(body: RoleInput, token: string): Promise<ApiRole | undefined> {
-    return apiClient.request<ApiRole>('/v1/roles', {
+    return apiClient.request<ApiRole>(urls.roles(), {
       method: 'POST',
       body,
       token,
@@ -37,7 +38,7 @@ export const rolesApi = {
   },
 
   updateRole(id: EntityId, body: RoleInput, token: string): Promise<ApiRole | undefined> {
-    return apiClient.request<ApiRole>(`/v1/roles/${id}`, {
+    return apiClient.request<ApiRole>(urls.roleById(id), {
       method: 'PUT',
       body,
       token,
@@ -45,7 +46,7 @@ export const rolesApi = {
   },
 
   deleteRole(id: EntityId, token: string): Promise<undefined> {
-    return apiClient.request<undefined>(`/v1/roles/${id}`, {
+    return apiClient.request<undefined>(urls.roleById(id), {
       method: 'DELETE',
       token,
     })

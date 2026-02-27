@@ -183,6 +183,11 @@ export interface ChangePasswordRequest {
   new_password: string
 }
 
+export interface GoogleOAuthRequest {
+  credential: string
+  device_uuid?: string
+}
+
 export interface AuthenticatedChangePasswordRequest {
   current_password: string
   new_password: string

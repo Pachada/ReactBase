@@ -5,10 +5,12 @@ import {
 } from '@mantine/core'
 import { useLocalStorage } from '@mantine/hooks'
 import { Notifications } from '@mantine/notifications'
+import { GoogleOAuthProvider } from '@react-oauth/google'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useMemo, useState, type PropsWithChildren } from 'react'
 import { AuthProvider, useAuth } from '@/core/auth/AuthContext'
 import { SessionTimeoutWarning } from '@/core/auth/SessionTimeoutWarning'
+import { env } from '@/core/config/env'
 import { NotificationCenterProvider } from '@/core/notifications/NotificationCenterContext'
 import { PrimaryColorContext } from '@/core/theme/PrimaryColorContext'
 import {
@@ -24,10 +26,19 @@ import {
 } from '@/core/theme/color-presets'
 
 export function AppProviders({ children }: PropsWithChildren) {
+  if (!env.googleClientId) {
+    return (
+      <AuthProvider>
+        <ThemedProviders>{children}</ThemedProviders>
+      </AuthProvider>
+    )
+  }
   return (
-    <AuthProvider>
-      <ThemedProviders>{children}</ThemedProviders>
-    </AuthProvider>
+    <GoogleOAuthProvider clientId={env.googleClientId}>
+      <AuthProvider>
+        <ThemedProviders>{children}</ThemedProviders>
+      </AuthProvider>
+    </GoogleOAuthProvider>
   )
 }
 

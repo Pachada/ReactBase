@@ -1,6 +1,7 @@
 interface RuntimeEnv {
   readonly VITE_API_BASE_URL?: string
   readonly VITE_ENABLE_THEME_TOKEN_EDITOR?: string
+  readonly VITE_GOOGLE_CLIENT_ID?: string
 }
 
 const runtimeEnv = import.meta.env as RuntimeEnv
@@ -24,4 +25,5 @@ export const env = {
     runtimeEnv.VITE_ENABLE_THEME_TOKEN_EDITOR,
     true,
   ),
+  googleClientId: runtimeEnv.VITE_GOOGLE_CLIENT_ID ?? '',
 }
