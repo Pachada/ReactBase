@@ -39,14 +39,16 @@ export function LoginPage() {
   const { colorScheme } = useMantineColorScheme()
   const state = (location.state as RouterState | null) ?? {}
   const redirectTo = state.from?.pathname ?? '/'
-  const { register, handleSubmit, formState, setError } = useForm<LoginFormValues>({
-    defaultValues: {
-      username: '',
-      password: '',
-      rememberMe: getRememberMePreference(),
+  const { register, handleSubmit, formState, setError, watch } = useForm<LoginFormValues>(
+    {
+      defaultValues: {
+        username: '',
+        password: '',
+        rememberMe: getRememberMePreference(),
+      },
+      mode: 'onBlur',
     },
-    mode: 'onBlur',
-  })
+  )
 
   const onSubmit = handleSubmit(async (values) => {
     try {
@@ -135,7 +137,7 @@ export function LoginPage() {
             </Stack>
           </form>
           <Divider label="or" labelPosition="center" />
-          <GoogleSignInButton redirectTo={redirectTo} />
+          <GoogleSignInButton redirectTo={redirectTo} rememberMe={watch('rememberMe')} />
           <Text size="xs" c="dimmed" ta="center">
             Don&apos;t have an account?{' '}
             <Anchor component={Link} to="/signup" size="xs">

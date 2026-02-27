@@ -26,6 +26,13 @@ import {
 } from '@/core/theme/color-presets'
 
 export function AppProviders({ children }: PropsWithChildren) {
+  if (!env.googleClientId) {
+    return (
+      <AuthProvider>
+        <ThemedProviders>{children}</ThemedProviders>
+      </AuthProvider>
+    )
+  }
   return (
     <GoogleOAuthProvider clientId={env.googleClientId}>
       <AuthProvider>

@@ -5,6 +5,7 @@ import { useAuth } from '@/core/auth/AuthContext'
 import { ApiError } from '@/core/api/ApiError'
 import { sessionApi } from '@/core/api/session-api'
 import { useNotificationCenter } from '@/core/notifications/NotificationCenterContext'
+import { env } from '@/core/config/env'
 
 interface GoogleSignInButtonProps {
   redirectTo?: string
@@ -18,6 +19,8 @@ export function GoogleSignInButton({
   const auth = useAuth()
   const navigate = useNavigate()
   const { addNotification } = useNotificationCenter()
+
+  if (!env.googleClientId) return null
 
   return (
     <Box display="flex" style={{ justifyContent: 'center' }}>
