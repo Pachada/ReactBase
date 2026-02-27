@@ -1,4 +1,5 @@
 import { apiClient } from '@/core/api/http-client'
+import { urls } from '@/core/config/urls'
 import type {
   ApiUser,
   AuthEnvelope,
@@ -19,19 +20,17 @@ export const usersApi = {
     { limit = 20, cursor }: ListUsersParams,
     token: string,
   ): Promise<CursorUsersEnvelope | undefined> {
-    const params = new URLSearchParams({ limit: String(limit) })
-    if (cursor) params.set('cursor', cursor)
-    return apiClient.request<CursorUsersEnvelope>(`/v1/users?${params.toString()}`, {
+    return apiClient.request<CursorUsersEnvelope>(urls.users({ limit, cursor }), {
       token,
     })
   },
 
   getUser(id: EntityId, token: string): Promise<DataUserEnvelope | undefined> {
-    return apiClient.request<DataUserEnvelope>(`/v1/users/${id}`, { token })
+    return apiClient.request<DataUserEnvelope>(urls.userById(id), { token })
   },
 
   createUser(body: CreateUserRequest): Promise<AuthEnvelope | undefined> {
-    return apiClient.request<AuthEnvelope>('/v1/users', {
+    return apiClient.request<AuthEnvelope>(urls.users(), {
       method: 'POST',
       body,
     })
@@ -48,7 +47,7 @@ export const usersApi = {
       delete payload.role_id
       delete payload.enable
     }
-    return apiClient.request<ApiUser>(`/v1/users/${id}`, {
+    return apiClient.request<ApiUser>(urls.userById(id), {
       method: 'PUT',
       body: payload,
       token,
@@ -56,7 +55,7 @@ export const usersApi = {
   },
 
   deleteUser(id: EntityId, token: string): Promise<undefined> {
-    return apiClient.request<undefined>(`/v1/users/${id}`, {
+    return apiClient.request<undefined>(urls.userById(id), {
       method: 'DELETE',
       token,
     })

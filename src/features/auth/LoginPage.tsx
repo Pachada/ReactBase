@@ -2,6 +2,7 @@ import {
   Anchor,
   Button,
   Checkbox,
+  Divider,
   PasswordInput,
   Stack,
   Text,
@@ -16,6 +17,7 @@ import { useAuth } from '@/core/auth/AuthContext'
 import { ApiError } from '@/core/api/ApiError'
 import { useNotificationCenter } from '@/core/notifications/NotificationCenterContext'
 import { getRememberMePreference } from '@/core/auth/auth-storage'
+import { GoogleSignInButton } from '@/features/auth/GoogleSignInButton'
 
 interface LoginFormValues {
   username: string
@@ -132,6 +134,8 @@ export function LoginPage() {
               </Button>
             </Stack>
           </form>
+          <Divider label="or" labelPosition="center" />
+          <GoogleSignInButton redirectTo={redirectTo} />
           <Text size="xs" c="dimmed" ta="center">
             Don&apos;t have an account?{' '}
             <Anchor component={Link} to="/signup" size="xs">

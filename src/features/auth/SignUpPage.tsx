@@ -1,6 +1,7 @@
 import {
   Anchor,
   Button,
+  Divider,
   PasswordInput,
   SimpleGrid,
   Stack,
@@ -19,6 +20,7 @@ import { useAuth } from '@/core/auth/AuthContext'
 import { ApiError } from '@/core/api/ApiError'
 import { useNotificationCenter } from '@/core/notifications/NotificationCenterContext'
 import { DATE_FORMAT, formatYMD, handleDateKeyDown } from '@/core/utils/date'
+import { GoogleSignInButton } from '@/features/auth/GoogleSignInButton'
 
 interface SignUpFormValues {
   username: string
@@ -247,7 +249,8 @@ export function SignUpPage() {
               </Button>
             </Stack>
           </form>
-
+          <Divider label="or" labelPosition="center" />
+          <GoogleSignInButton redirectTo="/" />
           <Text size="xs" c="dimmed" ta="center">
             Already have an account?{' '}
             <Anchor component={Link} to="/login" size="xs">

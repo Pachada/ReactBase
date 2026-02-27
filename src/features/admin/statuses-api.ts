@@ -1,4 +1,5 @@
 import { apiClient } from '@/core/api/http-client'
+import { urls } from '@/core/config/urls'
 import type { ApiStatus, StatusInput } from '@/core/api/types'
 
 interface StatusesListEnvelope {
@@ -8,7 +9,7 @@ interface StatusesListEnvelope {
 export const statusesApi = {
   async listStatuses(token: string): Promise<ApiStatus[]> {
     const res = await apiClient.request<StatusesListEnvelope | ApiStatus[]>(
-      '/v1/statuses',
+      urls.statuses(),
       {
         token,
       },
@@ -18,7 +19,7 @@ export const statusesApi = {
   },
 
   createStatus(body: StatusInput, token: string): Promise<ApiStatus | undefined> {
-    return apiClient.request<ApiStatus>('/v1/statuses', {
+    return apiClient.request<ApiStatus>(urls.statuses(), {
       method: 'POST',
       body,
       token,
@@ -30,7 +31,7 @@ export const statusesApi = {
     body: StatusInput,
     token: string,
   ): Promise<ApiStatus | undefined> {
-    return apiClient.request<ApiStatus>(`/v1/statuses/${id}`, {
+    return apiClient.request<ApiStatus>(urls.statusById(id), {
       method: 'PUT',
       body,
       token,
@@ -38,7 +39,7 @@ export const statusesApi = {
   },
 
   deleteStatus(id: number, token: string): Promise<undefined> {
-    return apiClient.request<undefined>(`/v1/statuses/${id}`, {
+    return apiClient.request<undefined>(urls.statusById(id), {
       method: 'DELETE',
       token,
     })
